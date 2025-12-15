@@ -4,6 +4,10 @@ import ShopView from '../views/ShopView.vue'
 import ProductDetail from '@/views/ProductDetail.vue'
 import CartView from '@/views/CartView.vue'
 import AiDiagnosisView from '@/views/AiDiagnosisView.vue'
+import CommunityView from '@/views/CommunityView.vue'
+import CommunityWrite from '@/views/CommunityWrite.vue'
+import CommunityDetail from '@/views/CommunityDetail.vue'
+import ShortsView from '@/views/ShortsView.vue' // ✅ 추가
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -32,6 +36,27 @@ const router = createRouter({
       path: '/ai',
       name: 'ai-diagnosis',
       component: AiDiagnosisView
+    },
+    {
+      path: '/community',
+      name: 'community',
+      component: CommunityView
+    },
+    {
+      path: '/community/write',
+      name: 'community-write',
+      component: CommunityWrite
+    },
+    {
+      path: '/community/post/:id',
+      name: 'community-detail',
+      component: CommunityDetail
+    },
+    {
+      path: '/shorts',
+      name: 'shorts',
+      component: ShortsView
+
     }
 
   ]

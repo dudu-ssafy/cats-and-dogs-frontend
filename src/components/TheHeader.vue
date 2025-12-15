@@ -42,7 +42,8 @@ const isHeaderVisible = ref(false);
         <ul class="nav-list">
           <li><router-link to="/" class="nav-item">홈</router-link></li>
           <li><router-link to="/ai" class="nav-item">AI 진단</router-link></li>
-          <li><a href="#" class="nav-item">커뮤니티</a></li>
+          <li><router-link to="/shorts" class="nav-item">쇼츠</router-link></li>
+          <li><router-link to="/community" class="nav-item">커뮤니티</router-link></li>
           <li><router-link to="/shop" class="nav-item">상점</router-link></li>
         </ul>
       </nav>
@@ -61,54 +62,11 @@ const isHeaderVisible = ref(false);
 </template>
 
 <style scoped>
-/* 기존 변수 및 스타일 유지 */
-.site-header {
-  --h-height: 80px;
-  --h-bg: rgba(255, 255, 255, 0.95);
-  --h-border: #EAEAEA;
-  --h-text: #999999;
-  --h-active: #4A3F35;
-  --h-primary: #FFD54F;
-  
-  width: 100%;
-  height: var(--h-height);
-  background-color: var(--h-bg);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--h-border);
-  
-  /* 기본 상태: 상단 고정 (Sticky) */
-  position: sticky; 
-  top: 0; 
-  z-index: 1000;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* 🔥 [핵심] AI 모드일 때 스타일 재정의 */
-.site-header.ai-mode {
-  position: fixed; /* 화면 위에 둥둥 뜨게 변경 */
-  border-bottom: none; /* 경계선 없애서 더 깔끔하게 */
-  background-color: rgba(255, 255, 255, 0.9); /* 약간 투명하게 */
-  transform: translateY(-100%); /* 화면 위로 숨기기! */
-  box-shadow: none;
-}
-
-/* 🔥 [핵심] AI 모드지만 '보임' 상태일 때 */
-.site-header.ai-mode.visible {
-  transform: translateY(0); /* 다시 내려오기 */
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05); /* 내려왔을 때 그림자 */
-}
-
-/* 🔥 [핵심] 마우스 감지 영역 (투명한 천장) */
-.hover-trigger {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  height: 20px; /* 상단 20px 영역 */
-  z-index: 2000; /* 헤더보다 위에 있어야 함 */
-  background: transparent; /* 투명 */
-}
-
-/* 기존 내부 스타일들 (그대로 둠) */
+/* 기존 스타일 모두 그대로 유지 */
+.site-header { --h-height: 80px; --h-bg: rgba(255, 255, 255, 0.95); --h-border: #EAEAEA; --h-text: #999999; --h-active: #4A3F35; --h-primary: #FFD54F; width: 100%; height: var(--h-height); background-color: var(--h-bg); backdrop-filter: blur(10px); border-bottom: 1px solid var(--h-border); position: sticky; top: 0; z-index: 1000; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.site-header.ai-mode { position: fixed; border-bottom: none; background-color: rgba(255, 255, 255, 0.9); transform: translateY(-100%); box-shadow: none; }
+.site-header.ai-mode.visible { transform: translateY(0); box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+.hover-trigger { position: fixed; top: 0; left: 0; width: 100%; height: 20px; z-index: 2000; background: transparent; }
 .header-inner { max-width: 1200px; margin: 0 auto; padding: 0 40px; height: 100%; display: flex; align-items: center; justify-content: space-between; }
 .header-logo { display: flex; align-items: center; gap: 6px; text-decoration: none; color: var(--h-active); cursor: pointer; }
 .logo-icon { color: var(--h-primary); font-size: 26px; }
