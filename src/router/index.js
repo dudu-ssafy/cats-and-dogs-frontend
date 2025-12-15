@@ -3,6 +3,7 @@ import MainPage from '../views/MainPage.vue'
 import ShopView from '../views/ShopView.vue' 
 import ProductDetail from '@/views/ProductDetail.vue'
 import CartView from '@/views/CartView.vue'
+import AiDiagnosisView from '@/views/AiDiagnosisView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,11 @@ const router = createRouter({
       path: '/cart',
       name: 'cart',
       component: CartView // 👈 '/cart'로 오면 장바구니 보여줘!
+    },
+    {
+      path: '/ai',
+      name: 'ai-diagnosis',
+      component: AiDiagnosisView
     }
 
   ]
