@@ -1,22 +1,30 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
+// 🔥 [추가] Pinia userStore 임포트
+import { useUserStore } from '@/stores/user'; 
 
 const router = useRouter();
+const userStore = useUserStore(); // userStore 인스턴스 생성
 
 const posts = ref([]);
 const currentCategory = ref('all');
 
 const goWrite = () => {
+    // 로그인이 안 되어있으면 로그인 페이지로 이동
+    if (!userStore.isLogin) {
+        alert('글쓰기는 로그인 후 이용 가능합니다.');
+        router.push('/login');
+        return;
+    }
     router.push('/community/write');
 };
 
-// 🔥 초기 데이터 ('병원 후기' 제거 -> '정보'나 '자유'로 변경)
+// ... (초기 데이터 및 computed, setCategory, handleLogout 함수는 기존과 동일) ...
 const initialData = [
     { id: 4215, category: 'qna', categoryName: '질문', title: '저희 강아지가 갑자기 산책을 거부하는데 왜 그럴까요? ㅠㅠ', author: '초보집사', date: '14:20', views: 89, isNew: true },
     { id: 4214, category: 'info', categoryName: '정보', title: '겨울철 강아지 발바닥 관리 꿀팁 정리해봤어요', author: '멍멍박사', date: '13:50', views: 245, isNew: false },
     { id: 4213, category: 'free', categoryName: '자유', title: '오늘 날씨 너무 좋아서 한강 다녀왔어요! (사진)', author: '산책왕', date: '12:10', views: 112, isNew: false },
-    // 원래 '후기'였던 글 -> '정보'로 변경
     { id: 4212, category: 'info', categoryName: '정보', title: '서울 XX동물병원 스케일링 비용 정보 공유해요', author: '건강이최고', date: '11:45', views: 330, isNew: false },
     { id: 4210, category: 'free', categoryName: '자유', title: '냥줍했어요... 이름 추천 받습니다 (치즈냥)', author: '냥냥펀치', date: '10:55', views: 890, isNew: false },
 ];
@@ -44,6 +52,11 @@ const filteredPosts = computed(() => {
 const setCategory = (cat) => {
     currentCategory.value = cat;
 };
+
+const handleLogout = () => {
+    userStore.logout();
+    router.push('/');
+}
 </script>
 
 <template>
@@ -52,13 +65,43 @@ const setCategory = (cat) => {
         
         <aside class="sidebar">
             <div class="login-card">
-                <div style="font-size:32px; margin-bottom:8px;">👋</div>
-                <p class="login-msg">로그인하고<br>집사들과 소통해보세요!</p>
-                <button class="btn-login">로그인 / 회원가입</button>
+                <template v-if="userStore.isLogin && userStore.user">
+                    <div 
+                        class="profile-thumb" 
+                        :style="{ backgroundImage: `url(${userStore.user.profileImg})` }"
+                        @click="router.push('/my-profile')"
+                    ></div>
+                    <p class="login-msg welcome-text">
+                        <span style="font-size: 20px;">👋</span> 반가워요!<br>
+                        <span style="color:#F57F17; font-weight:800">{{ userStore.user.nickname }}</span>님 🐾
+                    </p>
+                    
+                    <div class="user-activities">
+                        <router-link to="/my-profile?tab=posts" class="activity-link">
+                            <span class="material-icons-round">article</span> 내가 쓴 글
+                        </router-link>
+                        <router-link to="/my-profile?tab=comments" class="activity-link">
+                            <span class="material-icons-round">chat_bubble_outline</span> 내가 쓴 댓글
+                        </router-link>
+                    </div>
+
+                </template>
+                <template v-else>
+                    <div style="font-size:32px; margin-bottom:8px;">👋</div>
+                    <p class="login-msg">로그인하고<br>집사들과 소통해보세요!</p>
+                    <button class="btn-login" @click="router.push('/login')">로그인 / 회원가입</button>
+                </template>
             </div>
 
             <div class="menu-group">
-                <div class="menu-head">게시판</div>
+                <div class="menu-head">
+                    <span v-if="userStore.isLogin && userStore.user">
+                        {{ userStore.user.nickname }}님의 게시판
+                    </span>
+                    <span v-else>
+                        게시판
+                    </span>
+                </div>
                 <ul class="menu-list">
                     <li :class="{ active: currentCategory === 'all' }" @click="setCategory('all')">
                         <span class="material-icons-round menu-icon">format_list_bulleted</span> 전체글
@@ -176,6 +219,45 @@ const setCategory = (cat) => {
 </template>
 
 <style scoped>
+/* 🔥 [수정/제거] 로그인 상태일 때 프로필 카드 스타일 */
+.profile-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #EEE; border: 3px solid #FFD54F; margin: 0 auto 12px; background-size: cover; background-position: center; cursor: pointer; }
+.welcome-text { margin-bottom: 20px !important; } /* 인사말 아래 간격 확보 */
+.btn-login { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
+.btn-login:hover { background: var(--primary-deep); }
+/* '글쓰기 바로가기', '로그아웃' 버튼 관련 CSS 제거 */
+.btn-write-card, .btn-logout { display: none; } 
+
+/* 🔥 [추가] 활동 내역 섹션 스타일링 */
+.user-activities {
+    border-top: 1px dashed var(--line-border); /* 연한 선 */
+    padding-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+}
+.activity-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-body);
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+.activity-link:hover {
+    background: #FFFDE7;
+    color: var(--primary-deep);
+}
+.activity-link .material-icons-round {
+    font-size: 18px;
+    color: #FFB300; /* 츄르 색상으로 강조 */
+}
+
+
+/* 기존 스타일 유지 */
 .community-page { --bg-base: #FDFCF8; --bg-white: #FFFFFF; --primary-honey: #FFD54F; --primary-deep: #FFC107; --accent-butter: #FFFDE7; --text-title: #4A3F35; --text-body: #5D5D5D; --text-caption: #999999; --line-border: #EAEAEA; --radius-lg: 20px; background-color: var(--bg-base); min-height: 100vh; color: var(--text-title); font-family: 'NanumSquareRound', sans-serif; padding-top: 40px; }
 a { text-decoration: none; color: inherit; }
 ul { list-style: none; padding: 0; margin: 0; }
@@ -184,8 +266,6 @@ ul { list-style: none; padding: 0; margin: 0; }
 .sidebar { width: 220px; flex-shrink: 0; }
 .login-card { background: white; padding: 24px 20px; border: 1px solid var(--line-border); border-radius: var(--radius-lg); text-align: center; margin-bottom: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 .login-msg { font-size: 14px; color: var(--text-body); margin-bottom: 16px; font-weight: 700; }
-.btn-login { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
-.btn-login:hover { background: var(--primary-deep); }
 .menu-group { margin-bottom: 32px; }
 .menu-head { font-size: 13px; font-weight: 800; color: #CCC; margin-bottom: 12px; padding-left: 12px; }
 .menu-list li { padding: 12px 16px; font-size: 15px; font-weight: 700; color: var(--text-body); border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }

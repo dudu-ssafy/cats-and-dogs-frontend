@@ -8,6 +8,9 @@ import CommunityView from '@/views/CommunityView.vue'
 import CommunityWrite from '@/views/CommunityWrite.vue'
 import CommunityDetail from '@/views/CommunityDetail.vue'
 import ShortsView from '@/views/ShortsView.vue' // ✅ 추가
+import LoginView from '@/views/LoginView.vue'     // 🔥 추가
+import SignupView from '@/views/SignupView.vue'
+import MyProfileView from '@/views/MyProfileView.vue' 
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -57,7 +60,24 @@ const router = createRouter({
       name: 'shorts',
       component: ShortsView
 
-    }
+    },
+    {
+      path: '/login',      // 🔥 추가
+      name: 'login',
+      component: LoginView
+    },
+    {
+      path: '/signup',     // 🔥 추가
+      name: 'signup',
+      component: SignupView
+    },
+    {
+      path: '/my-profile', // 🔥 추가
+      name: 'myProfile',
+      component: MyProfileView
+    },
+
+
 
   ]
 })
