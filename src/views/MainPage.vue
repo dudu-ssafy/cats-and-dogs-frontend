@@ -1,500 +1,540 @@
-<script setup>
-import { useRouter } from 'vue-router';
-
-const trendingPosts = [
-    { title: "강아지가 갑자기 산책을 거부할 때...", category: "질문", comments: 15 },
-    { title: "겨울철 강아지 발바닥 관리 꿀팁", category: "정보", comments: 32 },
-    { title: "냥줍했어요 ㅠㅠ 이름 추천받아요", category: "자유", comments: 88 },
-];
-
-const shopItems = [
-    { name: "푹신푹신 강아지 인형", price: "24,000원", img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=200&auto=format&fit=crop' },
-    { name: "프리미엄 캣그라스 키트", price: "9,900원", img: 'https://images.unsplash.com/photo-1577023307521-177395011985?q=80&w=200&auto=format&fit=crop' },
-    { name: "AI 추천 사료 (소형견)", price: "45,000원", img: 'https://images.unsplash.com/photo-1583344686968-3f82247c4e57?q=80&w=200&auto=format&fit=crop' },
-];
-
-const router = useRouter();
-</script>
-
 <template>
-  <div class="home-view">
-    
-    <section class="hero-section">
-      <div class="container hero-inner">
-        <div class="hero-text-area">
-          <h1 class="hero-title font-title">
-            반려동물 건강,<br>
-            **AI 주치의**가 함께 할개냥 🐾
-          </h1>
-          <p class="hero-subtitle">
-            궁금한 증상을 사진으로 찍어주세요.<br>
-            3초 안에 분석 결과를 알려드립니다.
-          </p>
-          <button class="btn-primary-large" @click="router.push('/ai')">
-            <span class="material-icons-round">stethoscope</span> AI 진단 시작하기
-          </button>
+  <div class="home-container">
+    <section class="hero-wrap">
+      <div class="overlay"></div>
+      <div class="hero-content">
+        <h1 class="main-copy">
+          우리집 막내 건강,<br>
+          이제 걱정 마세요!
+        </h1>
+        <p class="sub-copy">
+          사진 한 장으로 시작하는 AI 주치의 프로젝트
+        </p>
+      </div>
+      <div class="scroll-down">
+        <div class="mouse-icon">
+          <div class="mouse-wheel"></div>
         </div>
-        <div class="hero-image-area">
-          <img src="https://images.unsplash.com/photo-1552053831-71594a27632a?q=80&w=600&auto=format&fit=crop" class="hero-image" alt="강아지 사진">
-        </div>
+        <span>SCROLL</span>
       </div>
     </section>
 
-    <div class="container">
-      
-      <section class="service-menu-section">
-        <div class="menu-card" @click="router.push('/community')">
-          <span class="material-icons-round menu-icon">forum</span>
-          <p class="menu-title">커뮤니티</p>
-          <small class="menu-desc">집사들과 소통해요</small>
-        </div>
-        <div class="menu-card" @click="router.push('/shorts')">
-          <span class="material-icons-round menu-icon">videocam</span>
-          <p class="menu-title">숏츠</p>
-          <small class="menu-desc">귀여운 일상 공유</small>
-        </div>
-        <div class="menu-card" @click="router.push('/shop')">
-          <span class="material-icons-round menu-icon">store</span>
-          <p class="menu-title">쇼핑몰</p>
-          <small class="menu-desc">건강 맞춤 상품</small>
-        </div>
-        <div class="menu-card accent" @click="router.push('/my-profile')">
-          <span class="material-icons-round menu-icon">favorite</span>
-          <p class="menu-title">마이페이지</p>
-          <small class="menu-desc">내 기록 확인</small>
-        </div>
-      </section>
+    <div class="content-layer" ref="contentLayer">
+      <div class="container">
+        
+        <section class="ai-section reveal">
+          <div class="ai-text">
+            <h2>어디가 아픈가요?</h2>
+            <p>
+              반려동물이 평소랑 다른 행동을 하나요?<br>
+              궁금한 증상을 말해주시면 AI가 3초 만에 분석해드려요.<br>
+              이제 병원 가기 전에 먼저 확인해보세요!
+            </p>
+            <div class="modern-search">
+              <input type="text" placeholder="예: 강아지 눈꼽이 많이 껴요">
+              <button class="search-icon-btn">
+                <span class="material-icons-round">pets</span>
+              </button>
+            </div>
+          </div>
+          <div class="ai-visual">
+            <div class="scan-effect"></div>
+            <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800&auto=format&fit=crop" class="ai-img" alt="AI 진단 강아지">
+          </div>
+        </section>
 
-      <section class="magazine-section">
-        <h2 class="section-heading font-title">
-          🔥 오늘의 핫토픽 & 최신 쇼츠
-        </h2>
-        <div class="magazine-grid">
-            
-            <div class="community-preview">
-                <h3 class="preview-title">인기 게시글 TOP 3</h3>
-                <div v-for="post in trendingPosts" :key="post.title" class="post-row">
-                    <span class="row-category">[{{ post.category }}]</span>
-                    <p class="row-title">{{ post.title }}</p>
-                    <span class="row-comments">({{ post.comments }})</span>
+        <h2 class="section-title reveal">집사들의 와글와글 수다방</h2>
+        <section class="board-grid reveal">
+          <div class="board-box">
+            <div class="board-header">
+              <h3>🔥 핫한 이야기</h3>
+              <span>더보기 +</span>
+            </div>
+            <ul>
+              <li class="post-item">
+                <span class="rank">1</span><span class="post-title">강아지 편식 고치는 꿀팁 공유해요</span>
+                <span class="post-meta">1.2k</span>
+              </li>
+              <li class="post-item">
+                <span class="rank">2</span><span class="post-title">캣타워 내돈내산 솔직 비교!</span>
+                <span class="post-meta">980</span>
+              </li>
+              <li class="post-item">
+                <span class="rank">3</span><span class="post-title">산책할 때 진드기 예방법 ㅠㅠ</span>
+                <span class="post-meta">850</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="board-box">
+            <div class="board-header">
+              <h3>✨ 실시간 질문</h3>
+              <span>더보기 +</span>
+            </div>
+            <ul>
+              <li class="post-item">
+                <span class="post-title">3개월 비숑 사료량 얼마나 주나요?</span>
+                <span class="post-meta">방금</span>
+              </li>
+              <li class="post-item">
+                <span class="post-title">마포구 친절한 동물병원 추천좀요</span>
+                <span class="post-meta">5분 전</span>
+              </li>
+              <li class="post-item">
+                <span class="post-title">고양이가 이불에 오줌을 쌌어요...</span>
+                <span class="post-meta">12분 전</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="adopt-banner-wrap reveal">
+          <div class="banner-overlay"></div>
+          <div class="banner-content">
+            <p class="banner-subtitle">ADOPT, DON'T SHOP</p>
+            <h2 class="banner-title">
+              작은 생명에게<br>
+              기적을 선물해주세요
+            </h2>
+            <a href="#" class="banner-btn">
+              아이들 보러가기
+            </a>
+          </div>
+        </section>
+
+        <h2 class="section-title reveal">도전! 멍냥 OX 퀴즈</h2>
+        
+        <div class="quiz-container-single reveal">
+          <button class="nav-arrow prev" @click="changeQuiz(-1)">
+            <span class="material-icons-round">chevron_left</span>
+          </button>
+
+          <div 
+            class="quiz-card active" 
+            :class="{ flipped: isFlipped }" 
+            @click="flipCard"
+          >
+            <div class="quiz-inner">
+              <div class="quiz-front">
+                <img :src="currentQuiz.img" class="q-img" :alt="currentQuiz.alt">
+                <div class="q-text-wrap">
+                  <span class="q-badge">Q.0{{ currentQuizIdx + 1 }}</span>
+                  <h3 class="q-question" v-html="currentQuiz.question"></h3>
+                  <div class="q-options">
+                    <div class="q-btn">O</div>
+                    <div class="q-btn">X</div>
+                  </div>
                 </div>
-                <button class="btn-more-text" @click="router.push('/community')">
-                    커뮤니티 전체보기 <span class="material-icons-round">chevron_right</span>
-                </button>
+              </div>
+              <div class="quiz-back">
+                <div class="a-result">{{ currentQuiz.answer }}</div>
+                <p class="a-desc" v-html="currentQuiz.desc"></p>
+                <span class="a-sub">(다시 터치하면 돌아가요)</span>
+              </div>
             </div>
+          </div>
 
-            <div class="shorts-preview">
-                <h3 class="preview-title">#귀여움주의 최신 쇼츠</h3>
-                <div class="shorts-list">
-                    <div class="shorts-thumb">
-                        <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=150&auto=format&fit=crop" alt="쇼츠">
-                        <span class="material-icons-round play-icon">play_arrow</span>
-                    </div>
-                    <div class="shorts-thumb">
-                        <img src="https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=150&auto=format&fit=crop" alt="쇼츠">
-                        <span class="material-icons-round play-icon">play_arrow</span>
-                    </div>
-                    <div class="shorts-thumb more-thumb" @click="router.push('/shorts')">
-                        <span class="material-icons-round">add_circle_outline</span>
-                        <p>더보기</p>
-                    </div>
-                </div>
-            </div>
-
+          <button class="nav-arrow next" @click="changeQuiz(1)">
+            <span class="material-icons-round">chevron_right</span>
+          </button>
         </div>
-      </section>
 
-      <section class="shop-recommend-section">
-        <h2 class="section-heading font-title">
-          🎁 AI 추천 베스트 아이템
-        </h2>
-        <div class="shop-bento-grid">
-            <div class="shop-item shop-big-card" @click="router.push('/shop/event')">
-                <div class="big-card-text">
-                    <span class="tag">SPECIAL SALE</span>
-                    <p class="big-title font-title">알러지 사료<br>7일 체험팩 50% 할인</p>
-                    <button class="btn-shop-event">지금 받기</button>
-                </div>
-                <img src="https://images.unsplash.com/photo-1583344686968-3f82247c4e57?q=80&w=300&auto=format&fit=crop" class="big-card-img" alt="이벤트 상품">
-            </div>
-
-            <div class="shop-item shop-small-card">
-                <img :src="shopItems[0].img" :alt="shopItems[0].name" class="item-img-small">
-                <p class="item-name-small">{{ shopItems[0].name }}</p>
-                <span class="item-price-small">{{ shopItems[0].price }}</span>
-            </div>
-
-             <div class="shop-item shop-small-card">
-                <img :src="shopItems[1].img" :alt="shopItems[1].name" class="item-img-small">
-                <p class="item-name-small">{{ shopItems[1].name }}</p>
-                <span class="item-price-small">{{ shopItems[1].price }}</span>
-            </div>
-        </div>
-      </section>
-      
+      </div>
     </div>
   </div>
 </template>
 
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+
+// 1. 퀴즈 데이터 및 상태 관리
+const currentQuizIdx = ref(0);
+const isFlipped = ref(false);
+
+const quizData = [
+  {
+    img: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=600&auto=format&fit=crop',
+    alt: '강아지 눈',
+    question: '강아지는 세상을<br>흑백으로만 본다?',
+    answer: 'X',
+    desc: '적록색맹과 비슷해요!<br>파란색과 노란색은 구분할 수 있어요.'
+  },
+  {
+    img: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?q=80&w=600&auto=format&fit=crop',
+    alt: '우는 고양이',
+    question: '다 큰 고양이는<br>사람에게만 "야옹" 한다?',
+    answer: 'O',
+    desc: '고양이끼리는 눈빛과 냄새로 대화해요.<br>집사에게만 목소리를 내는 거랍니다!'
+  },
+  {
+    img: 'https://images.unsplash.com/photo-1554692992-e422ae42550e?q=80&w=600&auto=format&fit=crop',
+    alt: '강아지 코',
+    question: '강아지 코 지문으로<br>신원 확인이 가능하다?',
+    answer: 'O',
+    desc: '사람의 지문처럼 강아지 "비문"도<br>모두 달라서 등록이 가능해요!'
+  }
+];
+
+// 현재 보여줄 퀴즈 데이터 계산
+const currentQuiz = computed(() => quizData[currentQuizIdx.value]);
+
+// 카드 뒤집기 함수
+const flipCard = () => {
+  isFlipped.value = !isFlipped.value;
+};
+
+// 퀴즈 변경 함수
+const changeQuiz = (direction) => {
+  isFlipped.value = false; // 카드 초기화
+  
+  // 인덱스 계산 (순환 구조)
+  let nextIdx = currentQuizIdx.value + direction;
+  if (nextIdx >= quizData.length) nextIdx = 0;
+  if (nextIdx < 0) nextIdx = quizData.length - 1;
+  
+  // 약간의 딜레이 후 데이터 변경 (플립 애니메이션 고려 시 필요하면 사용, 여기선 즉시 변경)
+  currentQuizIdx.value = nextIdx;
+};
+
+// 2. 스크롤 애니메이션 (Intersection Observer)
+const contentLayer = ref(null);
+
+onMounted(() => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+      }
+    });
+  }, { threshold: 0.15 });
+
+  // .reveal 클래스를 가진 요소들을 관찰
+  const revealElements = document.querySelectorAll('.reveal');
+  revealElements.forEach(el => observer.observe(el));
+});
+</script>
+
+<style>
+/* 폰트 로드: 
+  실제 프로젝트에서는 index.html의 <head>에 넣거나, 
+  App.vue의 style 섹션 혹은 글로벌 css 파일에서 import 하는 것을 권장합니다.
+*/
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+@import url('https://hangeul.pstatic.net/hangeul_static/css/nanum-square-round.css');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Round');
+</style>
+
 <style scoped>
-/* =================================== */
-/* 글로벌 스타일 변수 및 베이스 */
-/* =================================== */
-.home-view {
-    --color-primary: #FFC107;       /* Deep Honey */
-    --color-accent: #795548;        /* Mocha Brown */
-    --color-secondary: #8BC34A;     /* Soft Green */
-    --color-background: #FFFDF5;    /* Soft Cream */
-    --color-text-body: #5D4037;     /* Dark Brown */
-    --color-text-dark: #3E2723;     /* Blackish Brown */
-    --radius-card: 16px;
-    --shadow-base: 0 8px 15px rgba(0, 0, 0, 0.05);
-
-    background-color: var(--color-background);
-    padding-bottom: 100px;
-}
-.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-.font-title { font-family: 'Jua', cursive; }
-.section-heading {
-    font-size: 28px;
-    color: var(--color-text-dark);
-    text-align: center;
-    margin-bottom: 40px;
-    margin-top: 80px; /* 섹션 간격 확보 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-.btn {
-    border: none;
-    cursor: pointer;
-    transition: 0.3s;
-    font-family: 'Jua', cursive;
-}
-.btn-primary-large {
-    padding: 14px 30px;
-    background: var(--color-primary);
-    color: var(--color-text-dark);
-    font-size: 20px;
-    font-weight: 700;
-    border-radius: 50px;
-    box-shadow: 0 8px 15px rgba(255, 193, 7, 0.4);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 20px;
-}
-.btn-primary-large:hover {
-    background: #FFB300;
-    transform: translateY(-2px);
+/* ========================================
+    0. Theme Variables
+    ========================================
+*/
+.home-container {
+    --font-title: 'Jua', cursive;
+    --font-body: 'NanumSquareRound', sans-serif;
+    
+    --primary-honey: #FFB300; 
+    --soft-butter: #FFF176; 
+    --bg-cream: #FFFDE7; 
+    
+    --text-brown-dark: #4E342E; 
+    --text-brown-light: #795548; 
+    
+    --shadow-soft: 0 12px 30px rgba(255, 179, 0, 0.25);
+    
+    font-family: var(--font-body);
+    color: var(--text-brown-light);
+    background-color: var(--bg-cream);
+    overflow-x: hidden;
 }
 
-/* =================================== */
-/* 1. HERO SECTION */
-/* =================================== */
-.hero-section {
-    padding: 80px 0;
-    background-color: white; /* 히어로 섹션만 배경 흰색 */
-    margin-bottom: 40px;
-    /* 🔥 [포인트] 발바닥 패턴 배경 추가 */
-    background-image: radial-gradient(#FFC107 10%, transparent 11%), radial-gradient(#FFC107 10%, transparent 11%);
-    background-size: 80px 80px;
-    background-position: 0 0, 40px 40px;
-    opacity: 0.05;
-}
-.hero-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 40px;
-}
-.hero-text-area {
-    flex: 1;
-    max-width: 50%;
-    z-index: 10;
-}
-.hero-title {
-    font-size: 52px;
-    line-height: 1.2;
-    color: var(--color-accent);
-    margin-bottom: 20px;
-}
-.hero-title strong {
-    color: var(--color-primary);
-}
-.hero-subtitle {
-    font-size: 18px;
-    color: var(--color-text-body);
-    line-height: 1.6;
-}
-.hero-image-area {
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-}
-.hero-image {
-    width: 100%;
-    max-width: 500px;
-    height: 400px;
-    object-fit: cover;
-    border-radius: var(--radius-card);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+/* Common Styles applied within scope */
+h1, h2, h3, h4, .s-title, .tag-text, .badge {
+    font-family: var(--font-title);
 }
 
-/* =================================== */
-/* 2. SERVICE MENU SECTION */
-/* =================================== */
-.service-menu-section {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-bottom: 60px;
-}
-.menu-card {
-    background: white;
-    padding: 25px;
-    border-radius: var(--radius-card);
-    text-align: center;
-    cursor: pointer;
-    box-shadow: var(--shadow-base);
-    transition: 0.3s;
-    border: 2px solid transparent;
-}
-.menu-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--color-primary);
-    box-shadow: 0 12px 20px rgba(255, 193, 7, 0.2);
-}
-.menu-icon {
-    font-size: 36px;
-    color: var(--color-primary);
-    margin-bottom: 10px;
-}
-.menu-card.accent .menu-icon {
-    color: var(--color-secondary);
-}
-.menu-title {
-    font-size: 18px;
-    font-weight: 700;
-    margin: 0 0 5px 0;
-    color: var(--color-text-dark);
-}
-.menu-desc {
-    font-size: 13px;
-    color: var(--color-text-body);
-}
+a { text-decoration: none; color: inherit; transition: 0.3s; }
+ul { list-style: none; padding: 0; margin: 0; }
+button { font-family: var(--font-body); border: none; cursor: pointer; }
 
-/* =================================== */
-/* 3. MAGAZINE/COMMUNITY SECTION */
-/* =================================== */
-.magazine-section {
-    background-color: var(--color-background);
-}
-.magazine-grid {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr; /* 좌우 비율 조정 */
-    gap: 40px;
-    background: white;
-    padding: 30px;
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-base);
-}
-.preview-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--color-accent);
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #EEE;
-}
-.community-preview {
-    padding-right: 20px;
-}
-.post-row {
-    display: flex;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px dashed #F5F5F5;
-    cursor: pointer;
-}
-.post-row:hover .row-title {
-    color: var(--color-primary);
-}
-.row-category {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-secondary);
-    width: 80px;
-    flex-shrink: 0;
-}
-.row-title {
-    flex: 1;
-    font-size: 16px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.row-comments {
-    font-size: 13px;
-    color: #FF5252;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-.btn-more-text {
-    background: none;
-    border: none;
-    color: var(--color-text-body);
-    font-size: 14px;
-    font-weight: 700;
-    margin-top: 20px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    float: right;
-}
-.btn-more-text:hover {
-    color: var(--color-accent);
-}
-
-/* 쇼츠 리스트 */
-.shorts-preview {
-    background-color: #F8F8F8;
-    padding: 20px;
-    border-radius: var(--radius-card);
-}
-.shorts-list {
-    display: flex;
-    gap: 15px;
-    justify-content: space-between;
-}
-.shorts-thumb {
-    width: 100%;
-    max-width: 150px;
-    aspect-ratio: 9/16;
-    border-radius: 10px;
-    overflow: hidden;
+/* ========================================
+    1. Hero Section
+    ========================================
+*/
+.hero-wrap {
     position: relative;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    width: 100%; height: 100vh;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background-image: url('https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=2524&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center 30%;
+    background-attachment: fixed;
 }
-.shorts-thumb img {
+
+.overlay {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5));
+}
+
+.hero-content {
+    position: relative; z-index: 10; text-align: center; color: #fff;
+    transform: translateY(20px); opacity: 0;
+    animation: fadeUp 1s ease-out forwards; animation-delay: 0.5s;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    width: 90%;
+}
+
+@keyframes fadeUp { to { transform: translateY(0); opacity: 1; } }
+
+.main-copy { font-size: 70px; line-height: 1.15; margin-bottom: 24px; }
+.sub-copy { font-size: 22px; margin-bottom: 40px; font-family: var(--font-body); font-weight: 700; }
+
+.scroll-down {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    color: #fff; font-family: var(--font-title); font-size: 15px;
+    animation: bounce 2s infinite; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.mouse-icon { width: 28px; height: 44px; border: 2px solid #fff; border-radius: 50px; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+.mouse-wheel { width: 4px; height: 6px; background: #fff; border-radius: 50%; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); animation: wheel 2s infinite; }
+@keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform:translateX(-50%) translateY(0);} 40% {transform:translateX(-50%) translateY(-10px);} 60% {transform:translateX(-50%) translateY(-5px);} }
+@keyframes wheel { 0% {top:10px; opacity:1;} 100% {top:24px; opacity:0;} }
+
+
+/* ========================================
+    2. Content Layer
+    ========================================
+*/
+.content-layer {
+    position: relative;
+    background: var(--bg-cream);
+    z-index: 20;
+    border-radius: 50px 50px 0 0;
+    margin-top: -60px;
+    padding-top: 100px;
+    padding-bottom: 100px;
+    box-shadow: 0 -20px 50px rgba(0,0,0,0.1);
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+
+/* AI 진단 섹션 */
+.ai-section { display: flex; align-items: center; justify-content: space-between; gap: 60px; margin-bottom: 160px; }
+
+.ai-text { flex: 1; }
+.ai-text h2 { font-size: 52px; color: var(--text-brown-dark); margin-bottom: 20px; line-height: 1.25; }
+.ai-text p { font-size: 19px; margin-bottom: 36px; line-height: 1.6; word-break: keep-all; }
+
+.modern-search {
+    display: flex; align-items: center;
+    background: #fff; padding: 6px 6px 6px 24px;
+    border-radius: 100px; width: 100%; max-width: 500px;
+    transition: 0.3s; border: 4px solid var(--soft-butter);
+    box-shadow: var(--shadow-soft);
+}
+.modern-search:focus-within { border-color: var(--primary-honey); transform: scale(1.02); }
+.modern-search input { flex: 1; background: transparent; border: none; outline: none; font-size: 17px; font-family: var(--font-body); color: var(--text-brown-dark); height: 44px;}
+.search-icon-btn {
+    width: 50px; height: 50px; background: var(--primary-honey); color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+    box-shadow: 0 4px 10px rgba(255, 179, 0, 0.4);
+}
+.search-icon-btn:hover { background: #FFCA28; transform: rotate(15deg); }
+
+.ai-visual {
+    flex-basis: 500px; min-width: 400px; height: 450px; 
+    background: #FFF8E1; border-radius: 40px; overflow: hidden; position: relative;
+    box-shadow: var(--shadow-soft); border: 6px solid #fff;
+}
+.ai-img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.scan-effect {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: linear-gradient(to bottom, transparent, rgba(255, 179, 0, 0.3), transparent);
+    animation: scanDown 3s infinite linear;
+}
+@keyframes scanDown { 0% {transform: translateY(-100%);} 100% {transform: translateY(100%);} }
+
+
+/* Boards Section */
+.section-title { font-size: 36px; color: var(--text-brown-dark); margin-bottom: 50px; text-align: center; font-family: var(--font-title); }
+
+.board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 160px; }
+.board-box { background: #fff; border-radius: 32px; padding: 40px; box-shadow: var(--shadow-soft); border: 2px solid #fff; transition: 0.3s; }
+.board-box:hover { transform: translateY(-8px); border-color: var(--soft-butter); }
+
+.board-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 3px dashed #FFF176; padding-bottom: 16px; }
+.board-header h3 { font-size: 24px; color: var(--text-brown-dark); }
+.board-header span { font-size: 16px; color: var(--primary-honey); cursor: pointer; }
+
+.post-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #FFF3E0; cursor: pointer; transition: 0.2s; }
+.post-item:hover { color: var(--text-brown-dark); padding-left: 8px; }
+.post-title { font-size: 17px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 10px; }
+.post-meta { font-size: 14px; color: #BCAAA4; white-space: nowrap; }
+
+.rank { display: inline-block; width: 28px; height: 28px; background: var(--primary-honey); color: #fff; text-align: center; line-height: 28px; font-size: 15px; font-family: var(--font-title); border-radius: 50%; margin-right: 12px; }
+
+
+/* Adopt Invitation Banner */
+.adopt-banner-wrap {
+    margin-bottom: 160px;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.play-icon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 40px;
-    color: white;
-    opacity: 0.8;
-}
-.more-thumb {
-    background: #E0E0E0;
-    color: #888;
+    height: 500px;
+    position: relative;
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    background-image: url('https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=2000');
+    background-size: cover;
+    background-position: center 60%;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    font-weight: 700;
-}
-.more-thumb:hover {
-    background: #CCC;
-    color: var(--color-text-dark);
+    text-align: center;
 }
 
-/* =================================== */
-/* 4. SHOP BENO BOX SECTION */
-/* =================================== */
-.shop-bento-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr; /* 2:1:1 비율 */
-    gap: 20px;
+.banner-overlay {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: rgba(0, 0, 0, 0.4); 
+    transition: 0.5s;
 }
-.shop-item {
-    background: white;
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-base);
-    overflow: hidden;
-    transition: 0.3s;
+.adopt-banner-wrap:hover .banner-overlay {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.banner-content {
+    position: relative; z-index: 10;
+    color: #fff;
+    max-width: 600px;
+    padding: 0 20px;
+    animation: fadeIn 1s ease;
+}
+
+.banner-subtitle {
+    font-size: 20px; font-weight: 700; margin-bottom: 16px;
+    color: var(--soft-butter); letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.banner-title {
+    font-size: 48px; line-height: 1.3; margin-bottom: 40px;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    word-break: keep-all;
+    font-family: var(--font-title);
+}
+
+.banner-btn {
+    display: inline-block;
+    padding: 16px 40px;
+    background: transparent;
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: 18px; font-weight: 800; font-family: var(--font-title);
+    border-radius: 100px;
+    backdrop-filter: blur(4px);
+    transition: all 0.3s ease;
     cursor: pointer;
 }
-.shop-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+
+.banner-btn:hover {
+    background: #fff;
+    color: var(--text-brown-dark);
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
 }
 
-/* Big Card (2x1) */
-.shop-big-card {
-    grid-column: span 2;
-    display: flex;
-    align-items: center;
-    background: #F4EADF; /* 연한 갈색 배경 */
-    padding: 30px;
-}
-.big-card-text {
-    flex: 1;
-    padding-right: 20px;
-}
-.tag {
-    background: #FF5252;
-    color: white;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 50px;
-    margin-bottom: 10px;
-    display: inline-block;
-}
-.big-title {
-    font-size: 30px;
-    line-height: 1.3;
-    color: var(--color-accent);
-    margin-bottom: 15px;
-}
-.btn-shop-event {
-    background: var(--color-primary);
-    color: white;
-    padding: 10px 25px;
-    border-radius: 50px;
-    font-weight: 700;
-    font-size: 16px;
-}
-.big-card-img {
-    width: 200px;
-    height: 200px;
-    object-fit: contain;
+
+/* ========================================
+    5. OX Quiz Section
+    ========================================
+*/
+.quiz-container-single {
+    display: flex; align-items: center; justify-content: center;
+    gap: 40px; margin-bottom: 120px;
 }
 
-/* Small Cards (1x1) */
-.shop-small-card {
-    text-align: center;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+.quiz-card {
+    background-color: transparent;
+    width: 700px; height: 400px; 
+    perspective: 1000px; cursor: pointer; display: block; /* 항상 보이되 내용은 Vue로 교체 */
 }
-.item-img-small {
-    width: 100%;
-    height: 120px;
-    object-fit: contain;
-    margin-bottom: 10px;
+/* active 클래스는 이제 Vue의 v-show 로직 대신 데이터를 갈아끼우는 방식으로 대체하여 항상 보임 */
+.quiz-card.active { animation: fadeIn 0.5s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.quiz-inner {
+    position: relative; width: 100%; height: 100%; text-align: left; 
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d; border-radius: 40px; box-shadow: var(--shadow-soft);
 }
-.item-name-small {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--color-text-dark);
-    margin-bottom: 5px;
+
+.quiz-card.flipped .quiz-inner { transform: rotateY(180deg); }
+
+.quiz-front {
+    position: absolute; width: 100%; height: 100%;
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    border-radius: 40px;
+    display: flex; flex-direction: row; align-items: center; justify-content: space-between; 
+    padding: 30px; border: 4px solid #fff; background: #fff; color: var(--text-brown-dark); 
 }
-.item-price-small {
-    font-size: 14px;
-    color: var(--color-primary);
-    font-weight: 700;
+
+.quiz-back {
+    position: absolute; width: 100%; height: 100%;
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    border-radius: 40px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 30px; border: 4px solid #fff; background: var(--primary-honey); color: #fff; 
+    transform: rotateY(180deg); text-align: center;
+}
+
+.q-img { width: 45%; height: 100%; border-radius: 24px; object-fit: cover; margin-right: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.q-text-wrap { flex: 1; display: flex; flex-direction: column; align-items: flex-start; }
+
+.q-badge { background: var(--soft-butter); color: var(--text-brown-dark); padding: 8px 16px; border-radius: 20px; font-size: 16px; font-weight: 700; margin-bottom: 16px; display: inline-block; font-family: var(--font-title); }
+.q-question { font-size: 26px; line-height: 1.35; word-break: keep-all; font-family: var(--font-title); margin-bottom: 24px; }
+
+.q-options { display: flex; gap: 20px; }
+.q-btn { 
+    width: 60px; height: 60px; border-radius: 50%; background: var(--bg-cream); 
+    border: 2px solid var(--primary-honey); color: var(--primary-honey); 
+    font-size: 28px; font-weight: 900; display: flex; align-items: center; justify-content: center; transition: 0.3s; 
+}
+.quiz-card:hover .q-btn { transform: scale(1.1); background: var(--primary-honey); color: #fff; }
+
+.a-result { font-size: 60px; font-weight: 900; margin-bottom: 16px; }
+.a-desc { font-size: 20px; line-height: 1.6; word-break: keep-all; font-weight: 700; }
+.a-sub { font-size: 14px; margin-top: 20px; opacity: 0.8; }
+
+.nav-arrow {
+    width: 50px; height: 50px; border-radius: 50%; background: var(--soft-butter);
+    border: none; color: var(--text-brown-dark); font-size: 24px;
+    cursor: pointer; box-shadow: var(--shadow-soft); transition: 0.3s;
+    display: flex; align-items: center; justify-content: center;
+}
+.nav-arrow:hover { background: var(--primary-honey); color: #fff; transform: scale(1.1); }
+
+
+/* Animation Utils */
+.reveal { opacity: 0; transform: translateY(60px); transition: 1s ease; }
+.reveal.active { opacity: 1; transform: translateY(0); }
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+    .main-copy { font-size: 48px; }
+    .ai-section { flex-direction: column; text-align: center; }
+    .ai-visual { width: 100%; min-width: auto; height: 350px; flex-basis: auto; }
+    .modern-search { margin: 0 auto; }
+    .board-grid { grid-template-columns: 1fr; }
+    
+    .quiz-container-single { gap: 10px; }
+    
+    .quiz-card { width: 320px; height: 500px; }
+    .quiz-front { flex-direction: column; text-align: center; }
+    .q-img { width: 100%; height: 200px; margin-right: 0; margin-bottom: 20px; }
+    .q-text-wrap { align-items: center; }
+    .q-question { font-size: 22px; margin-bottom: 24px; }
+    
+    .banner-title { font-size: 32px; }
+    .adopt-banner-wrap { height: 400px; }
 }
 </style>
