@@ -1,17 +1,20 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-// 🔥 [추가] Pinia userStore 임포트
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user'; 
 
 const router = useRouter();
-const userStore = useUserStore(); // userStore 인스턴스 생성
+const route = useRoute();
+const userStore = useUserStore();
 
 const posts = ref([]);
-const currentCategory = ref('all');
+const currentCategory = ref('all'); // 초기값 전체글
+
+// ✅ 페이지네이션 설정
+const currentPage = ref(1);
+const itemsPerPage = 10; 
 
 const goWrite = () => {
-    // 로그인이 안 되어있으면 로그인 페이지로 이동
     if (!userStore.isLogin) {
         alert('글쓰기는 로그인 후 이용 가능합니다.');
         router.push('/login');
@@ -20,43 +23,72 @@ const goWrite = () => {
     router.push('/community/write');
 };
 
-// ... (초기 데이터 및 computed, setCategory, handleLogout 함수는 기존과 동일) ...
+// 테스트 데이터 (15개)
 const initialData = [
-    { id: 4215, category: 'qna', categoryName: '질문', title: '저희 강아지가 갑자기 산책을 거부하는데 왜 그럴까요? ㅠㅠ', author: '초보집사', date: '14:20', views: 89, isNew: true },
+    { id: 4224, category: 'qna', categoryName: '질문', title: '강아지가 산책 중 풀을 뜯어먹는데 괜찮나요?', author: '풀밭위의견', date: '15:10', views: 12, isNew: true },
+    { id: 4223, category: 'free', categoryName: '자유', title: '퇴근하고 집에 오니 휴지 파티가 열렸네요 ^^...', author: '해탈한집사', date: '14:55', views: 45, isNew: true },
+    { id: 4222, category: 'info', categoryName: '정보', title: '고양이 음수량 늘리는 확실한 방법 (습식 추천)', author: '물먹는하마', date: '14:40', views: 88, isNew: true },
+    { id: 4221, category: 'free', categoryName: '자유', title: '주말에 펫페어 가시는 분 계신가요?', author: '쇼핑중독', date: '14:30', views: 102, isNew: false },
+    { id: 4220, category: 'qna', categoryName: '질문', title: '사료를 바꿨는데 눈물이 터졌어요 ㅠㅠ', author: '눈물자국', date: '14:25', views: 67, isNew: false },
+    { id: 4219, category: 'info', categoryName: '정보', title: '반려견 동반 가능한 서울 근교 카페 리스트', author: '카페투어', date: '14:22', views: 310, isNew: false },
+    { id: 4218, category: 'free', categoryName: '자유', title: '미용 맡겼는데 곰돌이 컷 너무 귀여워요 (사진)', author: '곰돌이맘', date: '14:20', views: 150, isNew: false },
+    { id: 4217, category: 'qna', categoryName: '질문', title: '중성화 수술 후 넥카라 언제까지 해야 하나요?', author: '걱정인형', date: '14:15', views: 95, isNew: false },
+    { id: 4216, category: 'info', categoryName: '정보', title: '강아지 등록제 인식칩 내장형 vs 외장형 장단점', author: '칩박사', date: '14:10', views: 205, isNew: false },
+    { id: 4215, category: 'qna', categoryName: '질문', title: '저희 강아지가 갑자기 산책을 거부하는데 왜 그럴까요? ㅠㅠ', author: '초보집사', date: '14:05', views: 89, isNew: false },
     { id: 4214, category: 'info', categoryName: '정보', title: '겨울철 강아지 발바닥 관리 꿀팁 정리해봤어요', author: '멍멍박사', date: '13:50', views: 245, isNew: false },
     { id: 4213, category: 'free', categoryName: '자유', title: '오늘 날씨 너무 좋아서 한강 다녀왔어요! (사진)', author: '산책왕', date: '12:10', views: 112, isNew: false },
     { id: 4212, category: 'info', categoryName: '정보', title: '서울 XX동물병원 스케일링 비용 정보 공유해요', author: '건강이최고', date: '11:45', views: 330, isNew: false },
     { id: 4210, category: 'free', categoryName: '자유', title: '냥줍했어요... 이름 추천 받습니다 (치즈냥)', author: '냥냥펀치', date: '10:55', views: 890, isNew: false },
+    { id: 4209, category: 'free', categoryName: '자유', title: '강아지 옷 샀는데 사이즈 실패했어요 나눔합니다', author: '천사견', date: '10:10', views: 55, isNew: false },
 ];
 
 onMounted(() => {
-    const saved = localStorage.getItem('community-posts');
-    if (saved) {
-        posts.value = JSON.parse(saved);
-    } else {
-        localStorage.setItem('community-posts', JSON.stringify(initialData));
-        posts.value = initialData;
+    posts.value = initialData;
+
+    if (route.query.sort) {
+        if (route.query.sort === 'popular') currentCategory.value = 'hot';
+        else if (route.query.sort === 'latest') currentCategory.value = 'all';
     }
 });
 
+// 1. 필터링 로직
 const filteredPosts = computed(() => {
+    let result = [];
     if (currentCategory.value === 'all') {
-        return posts.value;
+        result = posts.value;
     } else if (currentCategory.value === 'hot') {
-        return posts.value.filter(p => p.views >= 100).sort((a,b) => b.views - a.views);
+        result = posts.value.filter(p => p.views >= 100).sort((a,b) => b.views - a.views);
     } else {
-        return posts.value.filter(p => p.category === currentCategory.value);
+        result = posts.value.filter(p => p.category === currentCategory.value);
     }
+    return result;
 });
 
-const setCategory = (cat) => {
-    currentCategory.value = cat;
+// 2. 현재 페이지 데이터 자르기
+const paginatedPosts = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredPosts.value.slice(start, end);
+});
+
+// 3. 전체 페이지 수
+const totalPages = computed(() => {
+    return Math.ceil(filteredPosts.value.length / itemsPerPage);
+});
+
+// ✅ [수정] 페이지 변경 시 맨 위로 스크롤 이동
+const changePage = (page) => {
+    if (page < 1 || page > totalPages.value) return;
+    currentPage.value = page;
+    // 부드럽게 맨 위로 이동
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const handleLogout = () => {
-    userStore.logout();
-    router.push('/');
-}
+// 카테고리 변경
+const setCategory = (cat) => {
+    currentCategory.value = cat;
+    currentPage.value = 1; 
+};
 </script>
 
 <template>
@@ -118,12 +150,13 @@ const handleLogout = () => {
                     <li :class="{ active: currentCategory === 'info' }" @click="setCategory('info')">
                         <span class="material-icons-round menu-icon">tips_and_updates</span> 정보 공유
                     </li>
-                    </ul>
+                </ul>
             </div>
         </aside>
 
         <main class="main-content">
-            <div class="top-section">
+            
+            <div class="top-section" v-if="currentCategory === 'all' && currentPage === 1">
                 <div class="best-container">
                     <div class="section-head">
                         <span class="section-title">
@@ -132,7 +165,7 @@ const handleLogout = () => {
                         </span>
                     </div>
                     <div class="best-list-wrap">
-                        <div>
+                         <div>
                             <div class="best-row"><span class="rank-no top">1</span><span class="best-txt">강아지가 밥을 안 먹을 때 꿀팁 (경험담)</span><span class="cmt-cnt">[12]</span></div>
                             <div class="best-row"><span class="rank-no top">2</span><span class="best-txt">고양이 젤리 색깔 바뀌는 거 정상인가요?</span><span class="cmt-cnt">[8]</span></div>
                             <div class="best-row"><span class="rank-no top">3</span><span class="best-txt">산책하다가 진드기 물렸어요 ㅠㅠ 대처법</span><span class="cmt-cnt">[24]</span></div>
@@ -179,14 +212,14 @@ const handleLogout = () => {
                     <tr><th>번호</th><th>분류</th><th style="text-align:left; padding-left:24px;">제목</th><th>글쓴이</th><th>등록일</th><th>조회</th></tr>
                 </thead>
                 <tbody>
-                    <tr style="background-color:#FAFAFA;">
+                    <tr style="background-color:#FAFAFA;" v-if="currentCategory === 'all' && currentPage === 1">
                         <td><span class="material-icons-round" style="font-size:16px; color:#FF5252">push_pin</span></td>
                         <td><span class="cat-badge">공지</span></td>
                         <td class="td-title"><div class="post-link"><span class="post-subj" style="font-weight:800">🐶 커뮤니티 클린 캠페인 안내</span></div></td>
                         <td>운영자</td><td>10:00</td><td>521</td>
                     </tr>
                     
-                    <tr v-for="post in filteredPosts" :key="post.id">
+                    <tr v-for="post in paginatedPosts" :key="post.id">
                         <td>{{ post.id }}</td>
                         <td><span class="cat-badge">{{ post.categoryName }}</span></td>
                         <td class="td-title">
@@ -200,18 +233,30 @@ const handleLogout = () => {
                         <td>{{ post.views }}</td>
                     </tr>
 
-                    <tr v-if="filteredPosts.length === 0">
+                    <tr v-if="paginatedPosts.length === 0">
                         <td colspan="6" style="padding: 40px; color: #999;">등록된 게시글이 없습니다.</td>
                     </tr>
                 </tbody>
             </table>
 
-            <div class="pagination-wrap">
-                <button class="page-btn disabled"><span class="material-icons-round" style="font-size:16px">chevron_left</span></button>
-                <button class="page-btn active">1</button>
-                <button class="page-btn">2</button>
-                <button class="page-btn">3</button>
-                <button class="page-btn"><span class="material-icons-round" style="font-size:16px">chevron_right</span></button>
+            <div class="pagination-wrap" v-if="totalPages > 0">
+                <button class="page-btn" :class="{ disabled: currentPage === 1 }" @click="changePage(currentPage - 1)">
+                    <span class="material-icons-round" style="font-size:16px">chevron_left</span>
+                </button>
+                
+                <button 
+                    v-for="page in totalPages" 
+                    :key="page" 
+                    class="page-btn" 
+                    :class="{ active: currentPage === page }"
+                    @click="changePage(page)"
+                >
+                    {{ page }}
+                </button>
+
+                <button class="page-btn" :class="{ disabled: currentPage === totalPages }" @click="changePage(currentPage + 1)">
+                    <span class="material-icons-round" style="font-size:16px">chevron_right</span>
+                </button>
             </div>
         </main>
     </div>
@@ -219,45 +264,16 @@ const handleLogout = () => {
 </template>
 
 <style scoped>
-/* 🔥 [수정/제거] 로그인 상태일 때 프로필 카드 스타일 */
+/* CSS는 이전과 100% 동일합니다 */
 .profile-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #EEE; border: 3px solid #FFD54F; margin: 0 auto 12px; background-size: cover; background-position: center; cursor: pointer; }
-.welcome-text { margin-bottom: 20px !important; } /* 인사말 아래 간격 확보 */
+.welcome-text { margin-bottom: 20px !important; }
 .btn-login { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
 .btn-login:hover { background: var(--primary-deep); }
-/* '글쓰기 바로가기', '로그아웃' 버튼 관련 CSS 제거 */
 .btn-write-card, .btn-logout { display: none; } 
-
-/* 🔥 [추가] 활동 내역 섹션 스타일링 */
-.user-activities {
-    border-top: 1px dashed var(--line-border); /* 연한 선 */
-    padding-top: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    text-align: left;
-}
-.activity-link {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--text-body);
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: 0.2s;
-}
-.activity-link:hover {
-    background: #FFFDE7;
-    color: var(--primary-deep);
-}
-.activity-link .material-icons-round {
-    font-size: 18px;
-    color: #FFB300; /* 츄르 색상으로 강조 */
-}
-
-
-/* 기존 스타일 유지 */
+.user-activities { border-top: 1px dashed var(--line-border); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.activity-link { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-body); font-weight: 600; padding: 4px 8px; border-radius: 6px; transition: 0.2s; }
+.activity-link:hover { background: #FFFDE7; color: var(--primary-deep); }
+.activity-link .material-icons-round { font-size: 18px; color: #FFB300; }
 .community-page { --bg-base: #FDFCF8; --bg-white: #FFFFFF; --primary-honey: #FFD54F; --primary-deep: #FFC107; --accent-butter: #FFFDE7; --text-title: #4A3F35; --text-body: #5D5D5D; --text-caption: #999999; --line-border: #EAEAEA; --radius-lg: 20px; background-color: var(--bg-base); min-height: 100vh; color: var(--text-title); font-family: 'NanumSquareRound', sans-serif; padding-top: 40px; }
 a { text-decoration: none; color: inherit; }
 ul { list-style: none; padding: 0; margin: 0; }

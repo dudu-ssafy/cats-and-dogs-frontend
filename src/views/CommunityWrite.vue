@@ -1,8 +1,12 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+// ✅ [수정] 유저 스토어 임포트 추가
+import { useUserStore } from '@/stores/user';
 
 const router = useRouter();
+// ✅ [수정] 유저 스토어 사용 설정
+const userStore = useUserStore();
 
 // 입력 데이터
 const category = ref('qna');
@@ -47,7 +51,8 @@ const submitPost = () => {
         category: category.value,
         categoryName: getCategoryName(category.value),
         title: title.value,
-        author: '최두용',
+        // ✅ [수정] 작성자 이름도 실제 유저 닉네임으로 저장되도록 변경
+        author: userStore.user?.nickname || '익명',
         date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         views: 0,
         isNew: true,
@@ -83,7 +88,9 @@ const handleImageClick = () => {
                 <span class="emoji-icon">👋</span>
                 <div class="welcome-text">
                     반가워요!<br>
-                    <span style="color:var(--text-title)">최두용님</span>
+                    <span style="color:var(--text-title); font-weight:800;">
+                        {{ userStore.user?.nickname || '회원' }}님
+                    </span>
                 </div>
                 <button class="btn-profile">내 정보 보기</button>
             </div>

@@ -12,8 +12,15 @@ import LoginView from '@/views/LoginView.vue'     // 🔥 추가
 import SignupView from '@/views/SignupView.vue'
 import MyProfileView from '@/views/MyProfileView.vue' 
 
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+
+  scrollBehavior() {
+    return { top: 0 }
+  },
+
+
   routes: [
     {
       path: '/',
@@ -76,6 +83,12 @@ const router = createRouter({
       name: 'myProfile',
       component: MyProfileView
     },
+    {
+      path: '/ai-diagnosis',
+      name: 'AiDiagnosis', // 👈 여기 name이 'AiDiagnosis' 여야 합니다!
+      component: () => import('../views/AiDiagnosisView.vue')
+
+    }
 
 
 
