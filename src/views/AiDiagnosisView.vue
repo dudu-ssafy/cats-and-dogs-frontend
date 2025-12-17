@@ -1,9 +1,10 @@
 <script setup>
-import { ref, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import DiagnosisCard from '@/components/DiagnosisCard.vue'; // ✅ 카드 부품 불러오기
+import { ref, nextTick, onMounted } from 'vue'; // onMounted 추가
+import { useRouter, useRoute } from 'vue-router'; // useRoute 추가
+import DiagnosisCard from '@/components/DiagnosisCard.vue'; 
 
 const router = useRouter();
+const route = useRoute(); // ✅ [기능 추가] 현재 주소(데이터) 가져오기 위한 설정
 const goHome = () => router.push('/');
 
 // 상태 변수
@@ -18,18 +19,30 @@ const historyList = ref([
     { id: 2, title: '강아지 눈 충혈 분석', active: false },
 ]);
 
+// ✅ [기능 추가] 페이지가 열릴 때 메인에서 보낸 데이터 확인
+onMounted(() => {
+    window.scrollTo(0, 0);
+
+    // 주소창에 ?symptom=... 데이터가 있다면?
+    if (route.query.symptom) {
+        userInput.value = route.query.symptom; // 입력창에 값 채우기
+        sendMessage(); // 바로 분석 시작
+    }
+});
+
 // ✅ [새로운 진단 시작] 버튼 기능
 const startNewChat = () => {
-    // 1. 대화 내용이 있으면 기록 저장
     if (messages.value.length > 0) {
         const firstMsg = messages.value.find(m => m.type === 'user');
         const title = firstMsg ? firstMsg.text : '새로운 진단 기록';
         historyList.value.unshift({ id: Date.now(), title: title, active: false });
     }
-    // 2. 초기화 (웰컴 화면으로 복귀)
     messages.value = [];
     userInput.value = '';
     isLoading.value = false;
+    
+    // URL의 쿼리도 지워주는 게 깔끔함 (선택사항)
+    router.replace({ query: null });
 };
 
 // 메시지 전송
