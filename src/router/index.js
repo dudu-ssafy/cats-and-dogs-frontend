@@ -11,7 +11,7 @@ import ShortsView from '@/views/ShortsView.vue' // ✅ 추가
 import LoginView from '@/views/LoginView.vue'     // 🔥 추가
 import SignupView from '@/views/SignupView.vue'
 import MyProfileView from '@/views/MyProfileView.vue' 
-
+import ShopOrder from '@/views/ShopOrder.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,6 +31,11 @@ const router = createRouter({
       path: '/shop',     
       name: 'shop',
       component: ShopView 
+    },
+    {
+    path: '/shop/order',
+    name: 'ShopOrder',
+    component: ShopOrder
     },
     { 
       path: '/shop/:id', 
@@ -88,7 +93,8 @@ const router = createRouter({
       name: 'AiDiagnosis', // 👈 여기 name이 'AiDiagnosis' 여야 합니다!
       component: () => import('../views/AiDiagnosisView.vue')
 
-    }
+    },
+
 
 
 
