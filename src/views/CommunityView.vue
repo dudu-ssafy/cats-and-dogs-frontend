@@ -8,9 +8,9 @@ const route = useRoute();
 const userStore = useUserStore();
 
 const posts = ref([]);
-const currentCategory = ref('all'); // 초기값 전체글
+const currentCategory = ref('all'); 
 
-// ✅ 페이지네이션 설정
+// ✅ 10개씩 보기 설정
 const currentPage = ref(1);
 const itemsPerPage = 10; 
 
@@ -23,7 +23,7 @@ const goWrite = () => {
     router.push('/community/write');
 };
 
-// 테스트 데이터 (15개)
+// ✅ 화면을 꽉 채울 테스트 데이터 (15개)
 const initialData = [
     { id: 4224, category: 'qna', categoryName: '질문', title: '강아지가 산책 중 풀을 뜯어먹는데 괜찮나요?', author: '풀밭위의견', date: '15:10', views: 12, isNew: true },
     { id: 4223, category: 'free', categoryName: '자유', title: '퇴근하고 집에 오니 휴지 파티가 열렸네요 ^^...', author: '해탈한집사', date: '14:55', views: 45, isNew: true },
@@ -42,16 +42,37 @@ const initialData = [
     { id: 4209, category: 'free', categoryName: '자유', title: '강아지 옷 샀는데 사이즈 실패했어요 나눔합니다', author: '천사견', date: '10:10', views: 55, isNew: false },
 ];
 
+// ✅ [핵심] 데이터 불러오기 로직 수정
 onMounted(() => {
-    posts.value = initialData;
+    const saved = localStorage.getItem('community-posts');
+    
+    if (saved) {
+        // 저장된 데이터가 있으면 불러옴
+        const parsed = JSON.parse(saved);
+        // 만약 저장된 데이터가 너무 적으면(테스트 데이터가 없으면), 초기 데이터와 합치거나 덮어씌움
+        // 여기서는 간단하게 "비어있거나 적으면 초기화" 로직을 적용해 10개가 보이도록 보장합니다.
+        if (parsed.length < 5) {
+             // 기존 글 유지하면서 테스트 데이터 뒤에 붙이기 (선택 사항)
+             // 여기서는 깔끔하게 초기 데이터로 리셋합니다. 
+             // (※ 주의: 이전에 쓴 글이 사라질 수 있습니다. 글 보존이 중요하다면 아래 로직을 수정해야 함)
+             posts.value = initialData;
+             localStorage.setItem('community-posts', JSON.stringify(initialData));
+        } else {
+            posts.value = parsed;
+        }
+    } else {
+        // 저장된 게 없으면 15개 테스트 데이터를 넣어서 10개가 꽉 차게 보이게 함
+        posts.value = initialData;
+        localStorage.setItem('community-posts', JSON.stringify(initialData));
+    }
 
+    // 정렬 쿼리 처리
     if (route.query.sort) {
         if (route.query.sort === 'popular') currentCategory.value = 'hot';
         else if (route.query.sort === 'latest') currentCategory.value = 'all';
     }
 });
 
-// 1. 필터링 로직
 const filteredPosts = computed(() => {
     let result = [];
     if (currentCategory.value === 'all') {
@@ -64,27 +85,22 @@ const filteredPosts = computed(() => {
     return result;
 });
 
-// 2. 현재 페이지 데이터 자르기
 const paginatedPosts = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     return filteredPosts.value.slice(start, end);
 });
 
-// 3. 전체 페이지 수
 const totalPages = computed(() => {
     return Math.ceil(filteredPosts.value.length / itemsPerPage);
 });
 
-// ✅ [수정] 페이지 변경 시 맨 위로 스크롤 이동
 const changePage = (page) => {
     if (page < 1 || page > totalPages.value) return;
     currentPage.value = page;
-    // 부드럽게 맨 위로 이동
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// 카테고리 변경
 const setCategory = (cat) => {
     currentCategory.value = cat;
     currentPage.value = 1; 
@@ -155,7 +171,6 @@ const setCategory = (cat) => {
         </aside>
 
         <main class="main-content">
-            
             <div class="top-section" v-if="currentCategory === 'all' && currentPage === 1">
                 <div class="best-container">
                     <div class="section-head">
@@ -264,7 +279,7 @@ const setCategory = (cat) => {
 </template>
 
 <style scoped>
-/* CSS는 이전과 100% 동일합니다 */
+/* CSS는 기존과 100% 동일합니다 */
 .profile-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #EEE; border: 3px solid #FFD54F; margin: 0 auto 12px; background-size: cover; background-position: center; cursor: pointer; }
 .welcome-text { margin-bottom: 20px !important; }
 .btn-login { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }

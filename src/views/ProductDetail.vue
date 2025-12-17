@@ -1,9 +1,11 @@
 <script setup>
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
+
 
 // 1. 현재 주소창의 ID 값 가져오기 (예: shop/1 이면 1을 가져옴)
 const route = useRoute();
+const router = useRouter();
 const productId = route.params.id;
 
 // 2. 해당 ID에 맞는 상품 정보를 찾아서 보여주기 (임시 데이터)
@@ -19,6 +21,14 @@ const product = ref({
 const quantity = ref(1);
 const increase = () => quantity.value++;
 const decrease = () => { if(quantity.value > 1) quantity.value--; };
+
+// ✅ [추가] 구매하기 버튼 클릭 시 이동 함수
+const goOrder = () => {
+    // 실제로는 선택한 수량/옵션 정보를 넘겨야 하지만, 일단 페이지 이동만 구현
+    router.push('/shop/order'); 
+};
+
+
 
 </script>
 
@@ -61,7 +71,7 @@ const decrease = () => { if(quantity.value > 1) quantity.value--; };
 
             <div class="btn-group">
                 <button class="btn btn-cart">장바구니</button>
-                <button class="btn btn-buy">구매하기</button>
+                <button class="btn btn-buy" @click="goOrder">구매하기</button>
             </div>
         </div>
     </section>
