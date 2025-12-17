@@ -1,19 +1,23 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 
+// [1] 장바구니 스토어 가져오기
+import { useCartStore } from '@/stores/cart'; 
 
-// 1. 현재 주소창의 ID 값 가져오기 (예: shop/1 이면 1을 가져옴)
 const route = useRoute();
 const router = useRouter();
-const productId = route.params.id;
+const productId = Number(route.params.id); // ID 숫자 변환
 
-// 2. 해당 ID에 맞는 상품 정보를 찾아서 보여주기 (임시 데이터)
-// 실제로는 여기서 서버(DB)에 "1번 상품 정보 줘!" 하고 요청합니다.
+// [2] 스토어 사용 설정
+const cartStore = useCartStore();
+
+// 2. 상품 정보
 const product = ref({
+  id: productId, // 현재 페이지 ID 사용
   brand: '네이처키친',
   name: '프리미엄 유기농 강아지 사료 2kg',
-  price: '28,900',
+  price: 28900, // [중요] 계산을 위해 숫자로 변경! (문자열 X)
   img: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=800&q=80'
 });
 
@@ -22,13 +26,21 @@ const quantity = ref(1);
 const increase = () => quantity.value++;
 const decrease = () => { if(quantity.value > 1) quantity.value--; };
 
-// ✅ [추가] 구매하기 버튼 클릭 시 이동 함수
+// 구매하기 버튼
 const goOrder = () => {
-    // 실제로는 선택한 수량/옵션 정보를 넘겨야 하지만, 일단 페이지 이동만 구현
     router.push('/shop/order'); 
 };
 
-
+// ✅ [추가] 장바구니 담기 버튼 함수
+const addCart = () => {
+    // 1. 스토어의 addToCart 함수 실행 (상품정보 + 수량 전달)
+    cartStore.addToCart(product.value, quantity.value);
+    
+    // 2. 알림 및 이동
+    if(confirm("장바구니에 담았습니다. 이동하시겠습니까?")) {
+        router.push('/shop/cart'); // 장바구니 페이지로 이동
+    }
+};
 
 </script>
 
@@ -46,7 +58,7 @@ const goOrder = () => {
             <h1 class="p-title">{{ product.name }} (상품번호: {{ productId }})</h1>
             
             <div class="p-price-wrap">
-                <span class="p-price">{{ product.price }}</span> <span class="p-unit">원</span>
+                <span class="p-price">{{ product.price.toLocaleString() }}</span> <span class="p-unit">원</span>
             </div>
 
             <div class="option-box">
@@ -66,11 +78,11 @@ const goOrder = () => {
 
             <div class="total-price">
                 <span class="total-label">총 상품 금액</span>
-                <span class="total-val">{{ product.price }}원</span>
+                <span class="total-val">{{ (product.price * quantity).toLocaleString() }}원</span>
             </div>
 
             <div class="btn-group">
-                <button class="btn btn-cart">장바구니</button>
+                <button class="btn btn-cart" @click="addCart">장바구니</button>
                 <button class="btn btn-buy" @click="goOrder">구매하기</button>
             </div>
         </div>
@@ -89,14 +101,12 @@ const goOrder = () => {
 </template>
 
 <style scoped>
-/* 주신 CSS 그대로 복사해서 넣으세요. 단, :root 와 body, header 부분은 삭제! */
-
+/* CSS는 그대로 두셔도 됩니다 */
 .container { max-width: 1200px; margin: 40px auto; padding: 0 40px; }
 
-/* 상단 영역: 이미지 + 구매정보 */
 .product-top {
     display: flex; gap: 60px;
-    background: #fff; /* 변수 대신 직접 색상 입력 (scoped라 변수 안 먹힐 수 있음) */
+    background: #fff; 
     border-radius: 24px;
     padding: 40px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.04);
@@ -121,12 +131,10 @@ const goOrder = () => {
 .p-price { font-size: 32px; font-weight: 800; color: #FF8F00; }
 .p-unit { font-size: 20px; color: #4B5563; font-weight: 700; }
 
-/* 옵션 박스 */
 .option-box { background: #FAFAFA; border-radius: 12px; padding: 20px; margin-bottom: 30px; }
 .opt-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 15px; font-weight: 700; color: #4B5563; }
 .opt-row:last-child { margin-bottom: 0; }
 
-/* 수량 조절 버튼 */
 .qty-control { display: flex; align-items: center; gap: 0; background: #fff; border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden; }
 .qty-btn { width: 32px; height: 32px; border: none; background: none; cursor: pointer; font-weight: bold; }
 .qty-btn:hover { background: #f0f0f0; }
@@ -136,7 +144,6 @@ const goOrder = () => {
 .total-label { font-size: 18px; font-weight: 800; }
 .total-val { font-size: 28px; font-weight: 800; color: #111827; }
 
-/* 버튼 그룹 */
 .btn-group { display: flex; gap: 12px; }
 .btn { flex: 1; padding: 20px; border-radius: 12px; font-size: 18px; font-weight: 800; cursor: pointer; transition: 0.2s; border: none; }
 
@@ -146,7 +153,6 @@ const goOrder = () => {
 .btn-buy { background: #111827; color: #fff; }
 .btn-buy:hover { background: #FF8F00; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255, 143, 0, 0.25); }
 
-/* 하단 상세 이미지 영역 */
 .detail-section { text-align: center; padding: 60px 0; border-top: 1px solid #E5E7EB; }
 .detail-title { font-size: 24px; font-weight: 800; margin-bottom: 40px; display: inline-block; border-bottom: 3px solid #FFD54F; padding-bottom: 4px; }
 .detail-img-placeholder { max-width: 860px; width: 100%; margin: 0 auto; display: block; }
