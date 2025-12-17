@@ -12,6 +12,8 @@ import LoginView from '@/views/LoginView.vue'     // 🔥 추가
 import SignupView from '@/views/SignupView.vue'
 import MyProfileView from '@/views/MyProfileView.vue' 
 import ShopOrder from '@/views/ShopOrder.vue'
+import LicensePage  from '@/views/LicensePage.vue'
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -94,7 +96,11 @@ const router = createRouter({
       component: () => import('../views/AiDiagnosisView.vue')
 
     },
-
+    {
+      path: '/my-page/license', 
+      name: 'license',
+      component: LicensePage
+    }
 
 
 
