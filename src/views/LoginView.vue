@@ -1,0 +1,157 @@
+<script setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
+
+const router = useRouter();
+const userStore = useUserStore();
+
+const email = ref('');
+const password = ref('');
+// 🔥 [추가] 닉네임을 따로 입력받지 않으므로, 더미 닉네임을 사용하거나, 
+//    실제 백엔드에서는 로그인 시 닉네임을 같이 받아와야 합니다. 
+//    현재 로직을 단순화하여 이메일 앞부분을 닉네임으로 사용하고 있었습니다. 
+//    -> 여기서는 닉네임 입력 필드가 없으므로, 더미 닉네임을 수정합니다.
+const dummyNickname = '히히'; // 닉네임 입력 필드가 없어서 임시로 사용
+
+const handleLogin = () => {
+    if (!email.value || !password.value) {
+        alert('이메일과 비밀번호를 모두 입력해주세요.');
+        return;
+    }
+
+    // Pinia 스토어에 로그인 요청
+    userStore.login({ 
+        username: email.value,
+        nickname: dummyNickname // 🔥 [수정] 스토어에 닉네임 전달
+    });
+    
+    alert(`로그인 성공! 환영합니다, ${userStore.user.nickname}님! 🐾`);
+    router.push('/'); // 홈으로 이동
+};
+</script>
+
+<template>
+  <div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="auth-image">
+            <div class="image-overlay">
+                <p class="quote">"오늘 하루,<br>우리 아이 기분은 어땠나요?"</p>
+            </div>
+        </div>
+
+        <div class="auth-form-area">
+            <div class="logo" @click="router.push('/')">함께하개<span>냥</span></div>
+            <h1 class="title">로그인</h1>
+
+            <form @submit.prevent="handleLogin">
+                <div class="input-group">
+                    <input 
+                        type="email" 
+                        class="input-field" 
+                        placeholder="이메일 주소" 
+                        v-model="email" 
+                        required
+                    >
+                </div>
+                <div class="input-group">
+                    <input 
+                        type="password" 
+                        class="input-field" 
+                        placeholder="비밀번호" 
+                        v-model="password" 
+                        required
+                    >
+                </div>
+                <button type="submit" class="btn-submit">로그인</button>
+            </form>
+
+            <div class="divider"><span>또는 SNS로 시작하기</span></div>
+
+            <div class="social-buttons">
+                <button class="social-btn" title="Google"><img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" class="social-icon"></button>
+                <button class="social-btn" title="Kakao"><img src="https://cdn-icons-png.flaticon.com/512/3669/3669973.png" class="social-icon"></button>
+                <button class="social-btn" title="Apple"><img src="https://cdn-icons-png.flaticon.com/512/0/747.png" class="social-icon"></button>
+            </div>
+
+            <div class="bottom-link">
+                아직 회원이 아니신가요? <router-link to="/signup">회원가입</router-link>
+            </div>
+        </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+/* (스타일은 변경 없음) */
+.auth-wrapper {
+    --bg-base: #FDFCF8;
+    --primary-honey: #FFD54F;
+    --primary-hover: #FFC107;
+    --text-title: #2C2C2C;
+    --text-body: #555555;
+    --line-soft: #E0E0E0;
+    --shadow-float: 0 20px 60px rgba(0,0,0,0.08);
+
+    background-color: var(--bg-base);
+    min-height: calc(100vh - 80px); /* 헤더 높이만큼 공간 확보 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+}
+.auth-container {
+    width: 1000px; height: 600px; background: white;
+    border-radius: 40px; box-shadow: var(--shadow-float);
+    display: flex; overflow: hidden;
+}
+.auth-image {
+    flex: 1;
+    background-image: url('https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
+    background-size: cover; background-position: center; position: relative;
+}
+.image-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.2); display: flex; flex-direction: column; 
+    justify-content: flex-end; padding: 40px;
+}
+.quote { color: white; font-size: 24px; font-weight: 800; line-height: 1.4; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+.auth-form-area {
+    flex: 1; padding: 60px; display: flex; flex-direction: column; justify-content: center;
+}
+.logo { font-size: 24px; font-weight: 800; color: var(--text-title); margin-bottom: 8px; cursor: pointer; }
+.logo span { color: var(--primary-honey); }
+.title { font-size: 32px; font-weight: 900; margin-bottom: 40px; color: var(--text-title); }
+
+.input-group { margin-bottom: 20px; }
+.input-field {
+    width: 100%; padding: 16px 24px; font-size: 16px; border: 2px solid var(--line-soft);
+    border-radius: 12px; background: #FAFAFA; outline: none; transition: 0.3s; font-family: inherit;
+}
+.input-field:focus { border-color: var(--primary-honey); background: white; }
+.input-field::placeholder { color: #AAA; }
+
+.btn-submit {
+    width: 100%; padding: 18px; background: var(--primary-honey); color: white;
+    font-size: 18px; font-weight: 800; border: none; border-radius: 12px; cursor: pointer;
+    margin-top: 10px; margin-bottom: 30px; transition: 0.2s;
+}
+.btn-submit:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+.divider { display: flex; align-items: center; color: #AAA; font-size: 13px; margin-bottom: 24px; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
+.divider span { padding: 0 16px; }
+
+.social-buttons { display: flex; justify-content: center; gap: 20px; }
+.social-btn {
+    width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line-soft);
+    background: white; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: 0.2s;
+}
+.social-btn:hover { border-color: var(--text-body); transform: translateY(-2px); }
+.social-icon { width: 24px; height: 24px; object-fit: contain; }
+
+.bottom-link { text-align: center; margin-top: 32px; font-size: 14px; color: var(--text-body); }
+.bottom-link a { font-weight: 700; text-decoration: none; color: var(--text-title); border-bottom: 1px solid var(--text-title); margin-left: 8px;}
+</style>

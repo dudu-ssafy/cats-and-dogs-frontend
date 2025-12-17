@@ -1,0 +1,211 @@
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+
+const route = useRoute();
+const router = useRouter();
+
+const post = ref(null); // 현재 보여줄 게시글 데이터
+const isLiked = ref(false); // 좋아요 눌렀는지 여부
+const likeCount = ref(5); // 좋아요 수 (임시)
+
+// 페이지 로드 시 실행
+onMounted(() => {
+    // 1. URL에서 글 번호(id) 가져오기
+    const postId = Number(route.params.id);
+    
+    // 2. localStorage에서 전체 글 목록 가져오기
+    const allPosts = JSON.parse(localStorage.getItem('community-posts') || '[]');
+    
+    // 3. 해당 번호의 글 찾기
+    const foundPost = allPosts.find(p => p.id === postId);
+
+    if (foundPost) {
+        post.value = foundPost;
+        // 조회수 1 증가 (임시)
+        foundPost.views++;
+        localStorage.setItem('community-posts', JSON.stringify(allPosts));
+    } else {
+        alert('삭제되었거나 존재하지 않는 게시글입니다.');
+        router.push('/community');
+    }
+});
+
+// 뒤로 가기
+const goList = () => {
+    router.push('/community');
+};
+
+// 좋아요 버튼 클릭 (토글)
+const toggleLike = () => {
+    isLiked.value = !isLiked.value;
+    likeCount.value += isLiked.value ? 1 : -1;
+};
+</script>
+
+<template>
+  <div class="detail-page" v-if="post">
+    <div class="container layout-grid">
+        
+        <aside class="sidebar">
+            <div class="login-card">
+                <span class="emoji-icon">👋</span>
+                <div class="welcome-text">반가워요!<br><span style="color:var(--text-title)">최두용님</span></div>
+                <button class="btn-profile">내 정보 보기</button>
+            </div>
+            <div class="menu-group">
+                <div class="menu-head">게시판</div>
+                <ul class="menu-list">
+                    <li><span class="material-icons-round menu-icon">format_list_bulleted</span> 전체글</li>
+                    <li><span class="material-icons-round menu-icon">local_fire_department</span> 인기글</li>
+                    <li><span class="material-icons-round menu-icon">chat_bubble_outline</span> 자유 수다</li>
+                    <li class="active"><span class="material-icons-round menu-icon">help_outline</span> 질문/답변</li>
+                    <li><span class="material-icons-round menu-icon">tips_and_updates</span> 정보 공유</li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            
+            <article class="post-view-card">
+                
+                <div class="post-header">
+                    <span class="category-label">{{ post.categoryName }}</span>
+                    <h1 class="post-subject">{{ post.title }}</h1>
+                    
+                    <div class="post-meta-row">
+                        <div class="author-info">
+                            <img src="https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="author-img">
+                            <div>
+                                <span class="author-name">{{ post.author }}</span>
+                                <span class="post-date">{{ post.date }}</span>
+                            </div>
+                        </div>
+                        <div class="meta-stats">
+                            <span class="stat-item"><span class="material-icons-round" style="font-size:16px">visibility</span> {{ post.views }}</span>
+                            <span class="stat-item"><span class="material-icons-round" style="font-size:16px">chat_bubble_outline</span> 4</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="post-body" v-html="post.content || '<p>내용이 없습니다.</p>'"></div>
+
+                <div class="post-actions">
+                    <button class="btn-paw-like" :class="{ active: isLiked }" @click="toggleLike">
+                        <span class="material-icons-round">pets</span> 
+                        <span class="like-count">{{ likeCount }}</span>
+                    </button>
+                    
+                    <div class="btn-group">
+                        <button class="btn-outline">신고</button>
+                        <button class="btn-outline" @click="goList">목록으로</button>
+                    </div>
+                </div>
+
+            </article>
+
+            <section class="comment-section">
+                <h3 class="cmt-header">댓글 <span class="cmt-count">4</span></h3>
+
+                <div class="cmt-input-box">
+                    <textarea class="cmt-textarea" placeholder="따뜻한 댓글을 남겨주세요."></textarea>
+                    <button class="btn-submit-cmt">등록</button>
+                </div>
+
+                <div class="cmt-list">
+                    <div class="cmt-item">
+                        <img src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="cmt-avatar">
+                        <div class="cmt-content">
+                            <div class="cmt-meta">
+                                <span class="cmt-writer">멍멍박사</span>
+                                <span class="cmt-date">14:35</span>
+                            </div>
+                            <p class="cmt-text">혹시 최근에 산책하다가 놀란 적 없나요? 큰 소리나 다른 강아지 때문에 트라우마가 생겼을 수도 있어요.</p>
+                            <span class="cmt-reply-btn">답글 달기</span>
+                        </div>
+                    </div>
+                    </div>
+            </section>
+
+        </main>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+/* 디자인 토큰 */
+.detail-page {
+    --bg-base: #FDFCF8; --bg-white: #FFFFFF;
+    --primary-honey: #FFD54F; --primary-deep: #FFC107; --accent-butter: #FFFDE7;
+    --paw-pink-bg: #FFEBEE; --paw-pink-text: #FF7043;
+    --text-title: #4A3F35; --text-body: #5D5D5D; --text-light: #999999;
+    --line-border: #EAEAEA; --radius-lg: 20px; --shadow-card: 0 4px 12px rgba(0,0,0,0.03);
+
+    background-color: var(--bg-base); min-height: 100vh;
+    color: var(--text-title); font-family: 'NanumSquareRound', sans-serif; padding-top: 40px;
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+.layout-grid { display: flex; gap: 40px; padding-bottom: 100px; }
+.sidebar { width: 220px; flex-shrink: 0; }
+.main-content { flex: 1; min-width: 0; }
+
+/* 사이드바 스타일 (재사용) */
+.login-card { background: white; padding: 24px 20px; border: 1px solid var(--line-border); border-radius: var(--radius-lg); text-align: center; margin-bottom: 32px; box-shadow: var(--shadow-card); }
+.emoji-icon { font-size: 40px; display: block; margin-bottom: 12px; }
+.welcome-text { font-size: 14px; color: var(--text-body); margin-bottom: 20px; font-weight: 700; }
+.btn-profile { width: 100%; padding: 10px; background: #FFF8E1; color: #FFB300; font-size: 13px; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; }
+.menu-head { font-size: 13px; font-weight: 800; color: #CCC; margin-bottom: 12px; padding-left: 12px; }
+.menu-list li { padding: 12px 16px; font-size: 15px; font-weight: 700; color: var(--text-body); border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.menu-list li:hover { background: var(--accent-butter); color: #F57F17; }
+.menu-list li.active { background: var(--accent-butter); color: #F57F17; font-weight: 800; }
+
+/* 게시글 상세 스타일 */
+.post-view-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--line-border); box-shadow: var(--shadow-card); padding: 40px; margin-bottom: 40px; }
+.post-header { border-bottom: 1px solid var(--line-border); padding-bottom: 24px; margin-bottom: 32px; }
+.category-label { font-size: 13px; font-weight: 800; color: #2E7D32; background: #E8F5E9; padding: 4px 10px; border-radius: 6px; display: inline-block; margin-bottom: 12px; }
+.post-subject { font-size: 28px; font-weight: 800; color: var(--text-title); margin-bottom: 20px; line-height: 1.3; }
+
+.post-meta-row { display: flex; justify-content: space-between; align-items: center; }
+.author-info { display: flex; align-items: center; gap: 10px; }
+.author-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
+.author-name { font-weight: 700; font-size: 15px; color: var(--text-title); }
+.post-date { font-size: 13px; color: var(--text-light); margin-left: 8px; }
+
+.meta-stats { display: flex; gap: 16px; font-size: 13px; color: var(--text-light); }
+.stat-item { display: flex; align-items: center; gap: 4px; }
+
+.post-body { font-size: 16px; color: var(--text-body); line-height: 1.8; min-height: 300px; margin-bottom: 40px; }
+/* 본문 내 이미지 스타일 (v-html로 들어오므로 deep selector 필요할 수도 있음) */
+:deep(.post-body img) { max-width: 100%; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: block; }
+
+/* 🐾 좋아요 버튼 */
+.post-actions { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--line-border); }
+.btn-paw-like { width: 90px; height: 90px; border-radius: 50%; background: white; border: 2px solid #EEE; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #CCC; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.btn-paw-like .material-icons-round { font-size: 40px; margin-bottom: 2px; }
+
+/* 호버하거나 활성화됐을 때 */
+.btn-paw-like:hover, .btn-paw-like.active { border-color: #FFAB91; background: var(--paw-pink-bg); color: var(--paw-pink-text); transform: scale(1.1) rotate(-10deg); box-shadow: 0 8px 20px rgba(255, 112, 67, 0.15); }
+.like-count { font-weight: 800; font-size: 15px; }
+
+.btn-group { display: flex; gap: 12px; width: 100%; justify-content: flex-end; margin-top: 10px; }
+.btn-outline { padding: 8px 16px; border: 1px solid var(--line-border); background: white; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-body); cursor: pointer; }
+.btn-outline:hover { background: #F9FAFB; color: var(--text-title); }
+
+/* 댓글 */
+.comment-section { background: #FAFAFA; border-radius: var(--radius-lg); padding: 32px; border: 1px solid var(--line-border); }
+.cmt-header { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--text-title); }
+.cmt-count { color: var(--primary-deep); margin-left: 4px; }
+.cmt-input-box { background: white; border: 1px solid var(--line-border); border-radius: 12px; padding: 16px; margin-bottom: 32px; display: flex; flex-direction: column; gap: 12px; }
+.cmt-textarea { width: 100%; border: none; resize: none; outline: none; font-size: 14px; font-family: inherit; min-height: 60px; }
+.btn-submit-cmt { align-self: flex-end; background: var(--primary-honey); color: white; padding: 8px 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; }
+.cmt-list { display: flex; flex-direction: column; gap: 24px; }
+.cmt-item { display: flex; gap: 16px; }
+.cmt-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #ddd; flex-shrink: 0; }
+.cmt-content { flex: 1; }
+.cmt-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.cmt-writer { font-weight: 700; font-size: 14px; color: var(--text-title); }
+.cmt-date { font-size: 12px; color: var(--text-light); }
+.cmt-text { font-size: 14px; color: var(--text-body); line-height: 1.5; margin-bottom: 8px; }
+.cmt-reply-btn { font-size: 12px; color: var(--text-light); font-weight: 600; cursor: pointer; }
+</style>
