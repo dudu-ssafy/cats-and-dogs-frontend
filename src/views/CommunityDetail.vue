@@ -5,24 +5,17 @@ import { useRoute, useRouter } from 'vue-router';
 const route = useRoute();
 const router = useRouter();
 
-const post = ref(null); // 현재 보여줄 게시글 데이터
-const isLiked = ref(false); // 좋아요 눌렀는지 여부
-const likeCount = ref(5); // 좋아요 수 (임시)
+const post = ref(null); 
+const isLiked = ref(false); 
+const likeCount = ref(5); 
 
-// 페이지 로드 시 실행
 onMounted(() => {
-    // 1. URL에서 글 번호(id) 가져오기
     const postId = Number(route.params.id);
-    
-    // 2. localStorage에서 전체 글 목록 가져오기
     const allPosts = JSON.parse(localStorage.getItem('community-posts') || '[]');
-    
-    // 3. 해당 번호의 글 찾기
     const foundPost = allPosts.find(p => p.id === postId);
 
     if (foundPost) {
         post.value = foundPost;
-        // 조회수 1 증가 (임시)
         foundPost.views++;
         localStorage.setItem('community-posts', JSON.stringify(allPosts));
     } else {
@@ -31,12 +24,10 @@ onMounted(() => {
     }
 });
 
-// 뒤로 가기
 const goList = () => {
     router.push('/community');
 };
 
-// 좋아요 버튼 클릭 (토글)
 const toggleLike = () => {
     isLiked.value = !isLiked.value;
     likeCount.value += isLiked.value ? 1 : -1;
@@ -92,7 +83,7 @@ const toggleLike = () => {
 
                 <div class="post-actions">
                     <button class="btn-paw-like" :class="{ active: isLiked }" @click="toggleLike">
-                        <span class="material-icons-round">pets</span> 
+                        <span class="material-icons-round">pets</span>
                         <span class="like-count">{{ likeCount }}</span>
                     </button>
                     
@@ -124,7 +115,7 @@ const toggleLike = () => {
                             <span class="cmt-reply-btn">답글 달기</span>
                         </div>
                     </div>
-                    </div>
+                </div>
             </section>
 
         </main>
@@ -137,7 +128,12 @@ const toggleLike = () => {
 .detail-page {
     --bg-base: #FDFCF8; --bg-white: #FFFFFF;
     --primary-honey: #FFD54F; --primary-deep: #FFC107; --accent-butter: #FFFDE7;
-    --paw-pink-bg: #FFEBEE; --paw-pink-text: #FF7043;
+    
+    /* ✅ 베이비 핑크 팔레트 (OOCSS Theme) */
+    --baby-pink-bg: #FFF0F3;
+    --baby-pink-border: #FFB7C5;
+    --baby-pink-text: #FF8C94;
+    
     --text-title: #4A3F35; --text-body: #5D5D5D; --text-light: #999999;
     --line-border: #EAEAEA; --radius-lg: 20px; --shadow-card: 0 4px 12px rgba(0,0,0,0.03);
 
@@ -150,7 +146,6 @@ const toggleLike = () => {
 .sidebar { width: 220px; flex-shrink: 0; }
 .main-content { flex: 1; min-width: 0; }
 
-/* 사이드바 스타일 (재사용) */
 .login-card { background: white; padding: 24px 20px; border: 1px solid var(--line-border); border-radius: var(--radius-lg); text-align: center; margin-bottom: 32px; box-shadow: var(--shadow-card); }
 .emoji-icon { font-size: 40px; display: block; margin-bottom: 12px; }
 .welcome-text { font-size: 14px; color: var(--text-body); margin-bottom: 20px; font-weight: 700; }
@@ -160,39 +155,62 @@ const toggleLike = () => {
 .menu-list li:hover { background: var(--accent-butter); color: #F57F17; }
 .menu-list li.active { background: var(--accent-butter); color: #F57F17; font-weight: 800; }
 
-/* 게시글 상세 스타일 */
 .post-view-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--line-border); box-shadow: var(--shadow-card); padding: 40px; margin-bottom: 40px; }
 .post-header { border-bottom: 1px solid var(--line-border); padding-bottom: 24px; margin-bottom: 32px; }
 .category-label { font-size: 13px; font-weight: 800; color: #2E7D32; background: #E8F5E9; padding: 4px 10px; border-radius: 6px; display: inline-block; margin-bottom: 12px; }
 .post-subject { font-size: 28px; font-weight: 800; color: var(--text-title); margin-bottom: 20px; line-height: 1.3; }
-
 .post-meta-row { display: flex; justify-content: space-between; align-items: center; }
 .author-info { display: flex; align-items: center; gap: 10px; }
 .author-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
 .author-name { font-weight: 700; font-size: 15px; color: var(--text-title); }
 .post-date { font-size: 13px; color: var(--text-light); margin-left: 8px; }
-
 .meta-stats { display: flex; gap: 16px; font-size: 13px; color: var(--text-light); }
 .stat-item { display: flex; align-items: center; gap: 4px; }
-
 .post-body { font-size: 16px; color: var(--text-body); line-height: 1.8; min-height: 300px; margin-bottom: 40px; }
-/* 본문 내 이미지 스타일 (v-html로 들어오므로 deep selector 필요할 수도 있음) */
 :deep(.post-body img) { max-width: 100%; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: block; }
 
-/* 🐾 좋아요 버튼 */
 .post-actions { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--line-border); }
-.btn-paw-like { width: 90px; height: 90px; border-radius: 50%; background: white; border: 2px solid #EEE; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #CCC; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.btn-paw-like .material-icons-round { font-size: 40px; margin-bottom: 2px; }
 
-/* 호버하거나 활성화됐을 때 */
-.btn-paw-like:hover, .btn-paw-like.active { border-color: #FFAB91; background: var(--paw-pink-bg); color: var(--paw-pink-text); transform: scale(1.1) rotate(-10deg); box-shadow: 0 8px 20px rgba(255, 112, 67, 0.15); }
-.like-count { font-weight: 800; font-size: 15px; }
+/* ✅ [OOCSS - Object] 좋아요 버튼 기본 구조 */
+.btn-paw-like { 
+    width: 90px; height: 90px; 
+    border-radius: 50%; background: #FFFFFF; 
+    border: 2px solid #EEEEEE; display: flex; flex-direction: column; 
+    align-items: center; justify-content: center; cursor: pointer; 
+    color: #CCCCCC; /* 기본 회색 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
 
+.btn-paw-like .material-icons-round {
+    font-size: 40px;
+    margin-bottom: 2px;
+}
+
+.btn-paw-like .like-count {
+    font-weight: 800;
+    font-size: 15px;
+    color: inherit;
+}
+
+/* ✅ [OOCSS - State/Modifier] 활성화된 베이비 핑크 상태 */
+.btn-paw-like.active { 
+    border-color: var(--baby-pink-border); 
+    background: var(--baby-pink-bg); 
+    color: var(--baby-pink-text);
+    transform: scale(1.1) rotate(-10deg);
+    box-shadow: 0 8px 20px rgba(255, 140, 148, 0.15);
+}
+
+.btn-paw-like:hover:not(.active) {
+    background: #F9F9F9;
+    border-color: #E0E0E0;
+}
+
+/* 기타 UI 요소 보존 */
 .btn-group { display: flex; gap: 12px; width: 100%; justify-content: flex-end; margin-top: 10px; }
 .btn-outline { padding: 8px 16px; border: 1px solid var(--line-border); background: white; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-body); cursor: pointer; }
 .btn-outline:hover { background: #F9FAFB; color: var(--text-title); }
-
-/* 댓글 */
 .comment-section { background: #FAFAFA; border-radius: var(--radius-lg); padding: 32px; border: 1px solid var(--line-border); }
 .cmt-header { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--text-title); }
 .cmt-count { color: var(--primary-deep); margin-left: 4px; }

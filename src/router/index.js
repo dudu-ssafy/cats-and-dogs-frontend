@@ -100,7 +100,9 @@ const router = createRouter({
       path: '/my-page/license', 
       name: 'license',
       component: LicensePage
-    }
+    },
+    
+
 
 
 
