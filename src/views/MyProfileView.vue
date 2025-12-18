@@ -9,16 +9,35 @@ const userStore = useUserStore();
 // UI 상태 관리 (0: 선택, 1: 입력, 2: 상세 프로필, 3: 정보 수정)
 const step = ref(0);
 
+// 팔로우 데이터 (추후 API 연동을 위한 더미 데이터)
+const followerCount = ref(128);
+const followingCount = ref(95);
+
+// ✅ [추가] 모달 상태 관리
+const showFollowModal = ref(false);
+const followModalType = ref('follower'); // 'follower' 또는 'following'
+
+// ✅ [추가] 모달용 더미 유저 리스트
+const followListData = ref([
+    { id: 1, nickname: '멍멍이맘', img: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=100', bio: '포메라니안 초코와 함께해요 🐾' },
+    { id: 2, nickname: '집사일기', img: 'https://images.unsplash.com/photo-1544568100-847a948585b9?w=100', bio: '댕댕이들과의 일상을 기록합니다.' },
+    { id: 3, nickname: '자연인', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', bio: '산책 친구 구함! 쪽지 주세요.' },
+    { id: 4, nickname: '초코주인', img: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=100', bio: '강아지는 사랑입니다 🐶' },
+]);
+
 onMounted(() => {
-    // 이미 정보가 있으면 바로 상세 프로필(Step 2) 노출
-    if (userStore.petProfile) {
+    if (!userStore.user) {
+        alert("로그인이 필요한 서비스입니다.");
+        router.push('/login');
+        return;
+    }
+    if (userStore.petProfile && Object.keys(userStore.petProfile).length > 0) {
         step.value = 2;
     } else {
         step.value = 0;
     }
 });
 
-// 입력 및 수정용 폼 데이터
 const form = ref({
     petName: '',
     ownerName: userStore.user?.nickname || '',
@@ -33,14 +52,12 @@ const form = ref({
     petImgUrl: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=800&q=80',
 });
 
-// 유저 정보 수정을 위한 데이터
 const userForm = ref({
     username: '',
     nickname: '',
     password: ''
 });
 
-// 기능 함수들
 const selectYesPet = () => step.value = 1; 
 
 const selectNoPet = () => {
@@ -70,7 +87,6 @@ const savePetInfo = () => {
     step.value = 2; 
 };
 
-// 정보 수정 모드 열기
 const openEditMode = () => {
     if (userStore.petProfile) {
         form.value = { ...userStore.petProfile };
@@ -86,7 +102,12 @@ const openEditMode = () => {
     step.value = 3; 
 };
 
-// 정보 수정 완료
+// ✅ [추가] 모달 열기 함수
+const openFollowModal = (type) => {
+    followModalType.value = type;
+    showFollowModal.value = true;
+};
+
 const updateAllInfo = () => {
     userStore.registerPet({
         ...form.value,
@@ -99,11 +120,8 @@ const updateAllInfo = () => {
 };
 
 const myPet = computed(() => userStore.petProfile);
-
-// 동물등록증 페이지 이동
 const goRegistration = () => router.push('/my-page/license'); 
 
-// 더미 데이터
 const shortsData = ref([
     { title: '힐링 영상', img: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400' }, 
     { title: '귀여움 주의', img: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400' }
@@ -117,19 +135,26 @@ const activityData = ref([
 <template>
   <div class="safe-area">
     <div class="page-container">
-        
+
         <section v-if="step === 0" class="content-section center-align">
-             <h1 class="page-title">반가워요!<br>어떤 집사님이신가요?</h1>
-             <div class="choice-container">
-                <div class="choice-card primary" @click="selectYesPet">
-                    <span class="emoji">🐶</span>
-                    <h3>반려견이 있어요</h3>
+            <h1 class="page-title">반가워요!<br>어떤 집사님이신가요?</h1>
+            <div class="choice-container">
+                <div class="c-choice-card is-primary" @click="selectYesPet">
+                    <div class="c-choice-card__icon">🐶</div>
+                    <div class="c-choice-card__text">
+                        <h3 class="title">반려동물이 있어요</h3>
+                        <p class="sub-text">이미 함께하고 있어요</p>
+                    </div>
                 </div>
-                <div class="choice-card secondary" @click="selectNoPet">
-                    <span class="emoji">🔍</span>
-                    <h3>아직 없어요</h3>
+
+                <div class="c-choice-card is-secondary" @click="selectNoPet">
+                    <div class="c-choice-card__icon">🔍</div>
+                    <div class="c-choice-card__text">
+                        <h3 class="title">아직 없어요</h3>
+                        <p class="sub-text">예비 집사로 시작하고 싶어요</p>
+                    </div>
                 </div>
-             </div>
+            </div>
         </section>
 
         <section v-if="step === 1" class="content-section">
@@ -176,6 +201,19 @@ const activityData = ref([
                 <div class="info-text">
                     <span class="sub-badge">{{ myPet.ownerNickname }}님의 가족</span>
                     <h1 class="main-name">{{ myPet.petName }}</h1>
+                    
+                    <div class="follow-stats">
+                        <div class="stat-link" @click="openFollowModal('follower')">
+                            <span class="label">팔로워</span>
+                            <span class="value">{{ followerCount }}</span>
+                        </div>
+                        <div class="v-divider"></div>
+                        <div class="stat-link" @click="openFollowModal('following')">
+                            <span class="label">팔로잉</span>
+                            <span class="value">{{ followingCount }}</span>
+                        </div>
+                    </div>
+
                     <p class="desc">{{ myPet.description }}</p>
                     <div class="tags">
                         <span v-for="tag in myPet.tags" :key="tag" class="tag-pill">{{ tag }}</span>
@@ -249,6 +287,27 @@ const activityData = ref([
             </div>
         </section>
 
+        <div v-if="showFollowModal" class="c-modal-overlay" @click.self="showFollowModal = false">
+            <div class="c-modal-window fadeUp">
+                <div class="c-modal-header">
+                    <h3 class="title">{{ followModalType === 'follower' ? '팔로워' : '팔로잉' }}</h3>
+                    <button class="close-btn" @click="showFollowModal = false">
+                        <span class="material-icons-round">close</span>
+                    </button>
+                </div>
+                <div class="c-modal-body">
+                    <div v-for="user in followListData" :key="user.id" class="c-user-item">
+                        <img :src="user.img" class="c-user-item__avatar">
+                        <div class="c-user-item__info">
+                            <div class="name">{{ user.nickname }}</div>
+                            <div class="bio">{{ user.bio }}</div>
+                        </div>
+                        <button class="c-user-item__btn">보기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
   </div>
 </template>
@@ -265,56 +324,39 @@ const activityData = ref([
 .page-title.small { font-size: 24px; text-align: left; margin: 0; }
 .section-title { font-family: 'Jua'; font-size: 24px; color: #3E2723; margin-bottom: 20px; }
 .card-title { font-family: 'Jua'; font-size: 18px; color: #5D4037; margin-bottom: 15px; }
-.main-name { font-family: 'Jua'; font-size: 32px; color: #3E2723; margin: 10px 0; }
+.main-name { font-family: 'Jua'; font-size: 32px; color: #3E2723; margin-top: 10px; margin-bottom: 5px; }
 
 /* 카드 및 컨테이너 */
 .card { background: white; padding: 24px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #EEE; margin-bottom: 20px; }
 .bottom-grid { display: grid; gap: 20px; }
 
+/* 팔로우 통계 */
+.follow-stats { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
+.stat-link { cursor: pointer; display: flex; gap: 5px; font-size: 14px; transition: opacity 0.2s; }
+.stat-link:hover { opacity: 0.7; }
+.stat-link .label { color: #8D6E63; font-weight: 500; }
+.stat-link .value { color: #3E2723; font-weight: 800; }
+.v-divider { width: 1px; height: 12px; background: #E0E0E0; }
+
 /* 입력 폼 */
 .input-wrap { margin-bottom: 16px; text-align: left; }
 .input-wrap label { display: block; font-weight: 700; font-size: 14px; color: #5D4037; margin-bottom: 6px; }
 .input-wrap input, .input-wrap select { width: 100%; padding: 12px; border: 2px solid #EEE; border-radius: 12px; font-size: 15px; background: #FAFAFA; box-sizing: border-box; }
+.input-wrap textarea { width: 100%; padding: 12px; border: 2px solid #EEE; border-radius: 12px; font-size: 15px; background: #FAFAFA; box-sizing: border-box; font-family: inherit; resize: none;}
 .row { display: flex; gap: 10px; }
 .row .input-wrap { flex: 1; }
 
-/* 버튼 공통 */
+/* 버튼 및 아이콘 */
 .action-btn { width: 100%; padding: 16px; background: #3E2723; color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
 .back-btn { background: none; border: none; font-weight: 700; color: #888; cursor: pointer; margin-bottom: 10px; }
 .back-text-btn { background: none; border: none; font-size: 16px; font-weight: 700; color: #8D6E63; cursor: pointer; }
+.settings-btn { background: #FFF !important; border: 2px solid #FFF8E1 !important; color: #8D6E63 !important; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.3s ease !important; }
+.settings-btn:hover { background: #FFF8E1 !important; color: #FFB300 !important; transform: scale(1.05); }
+.settings-btn .material-icons-round { font-size: 26px; }
 
-/* ✅ [수정] 톱니바퀴 버튼 디자인 (Skin & Animation 추가) */
-.settings-btn {
-    background: #FFF !important;
-    border: 2px solid #FFF8E1 !important;
-    color: #8D6E63 !important;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    transition: all 0.3s ease !important;
-}
-.settings-btn .material-icons-round {
-    font-size: 26px;
-    transition: transform 0.4s ease;
-}
-.settings-btn:hover {
-    background: #FFF8E1 !important;
-    color: #FFB300 !important;
-    transform: scale(1.05);
-    box-shadow: 0 6px 15px rgba(255, 213, 79, 0.2);
-}
-.settings-btn:hover .material-icons-round {
-    transform: rotate(45deg); /* 살짝 회전하는 효과 */
-}
-
-/* 프로필 상세 */
+/* 프로필 상세 전용 */
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .icon-btn { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
-
 .img-wrapper { position: relative; width: 120px; height: 120px; margin: 0 auto 20px; }
 .img-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 .badge-btn { position: absolute; bottom: 0; right: -10px; background: white; border: 2px solid #E3F2FD; color: #1976D2; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; z-index: 99; white-space: nowrap; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
@@ -327,17 +369,38 @@ const activityData = ref([
 .stat-val { font-weight: 700; color: #3E2723; font-size: 16px; }
 .divider { width: 1px; background: #EEE; }
 
-/* 리스트 및 기타 */
+/* 리스트 섹션 */
 .activity-list { list-style: none; padding: 0; margin: 0; }
 .activity-list li { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #EEE; font-size: 14px; }
-.act-text { color: #555; }
-.act-time { color: #BBB; font-size: 12px; }
 .shorts-row { display: flex; gap: 10px; }
 .short-item { width: 70px; height: 70px; border-radius: 12px; background-size: cover; background-position: center; background-color: #EEE; }
 .short-item.add { display: flex; align-items: center; justify-content: center; border: 2px dashed #DDD; background: white; color: #DDD; cursor: pointer; font-size: 24px; }
-
-/* 수정 화면 전용 스타일 */
 .sub-title { font-size: 16px; font-weight: 800; color: #FFB300; margin-bottom: 15px; border-bottom: 2px solid #FFF8E1; padding-bottom: 5px; text-align: left; }
+
+/* OOCSS: c-choice-card */
+.c-choice-card { display: flex; align-items: center; gap: 20px; padding: 24px; border-radius: 24px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; border: 2px solid transparent; text-align: left; }
+.c-choice-card:hover { transform: translateY(-5px); }
+.c-choice-card__icon { font-size: 32px; background: white; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+.c-choice-card__text .title { margin: 0; font-size: 18px; font-weight: 800; color: #3E2723; }
+.c-choice-card__text .sub-text { margin: 4px 0 0; font-size: 13px; color: #8D6E63; opacity: 0.8; }
+.is-primary { background-color: #FFF9E6; border-color: #FFE082; }
+.is-secondary { background-color: #F5F5F5; border-color: #E0E0E0; }
+
+/* ✅ [추가] OOCSS: 모달 레이아웃 & 유저 아이템 */
+.c-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.c-modal-window { background: white; width: 100%; max-width: 400px; border-radius: 28px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: fadeUp 0.4s ease-out; }
+.c-modal-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F5F5F5; }
+.c-modal-header .title { font-family: 'Jua'; font-size: 20px; color: #3E2723; margin: 0; }
+.c-modal-header .close-btn { background: none; border: none; cursor: pointer; color: #999; }
+.c-modal-body { max-height: 400px; overflow-y: auto; padding: 10px 20px; }
+
+.c-user-item { display: flex; align-items: center; gap: 12px; padding: 15px 0; border-bottom: 1px solid #FAFAFA; }
+.c-user-item:last-child { border-bottom: none; }
+.c-user-item__avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 1px solid #EEE; }
+.c-user-item__info { flex: 1; text-align: left; }
+.c-user-item__info .name { font-weight: 700; color: #3E2723; font-size: 15px; }
+.c-user-item__info .bio { font-size: 12px; color: #8D6E63; margin-top: 2px; }
+.c-user-item__btn { background: #FFF8E1; color: #FFB300; border: none; padding: 6px 14px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
 
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>

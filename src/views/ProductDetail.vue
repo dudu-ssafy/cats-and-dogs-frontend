@@ -38,7 +38,7 @@ const addCart = () => {
     
     // 2. 알림 및 이동
     if(confirm("장바구니에 담았습니다. 이동하시겠습니까?")) {
-        router.push('/shop/cart'); // 장바구니 페이지로 이동
+        router.push('/cart'); // 장바구니 페이지로 이동
     }
 };
 
