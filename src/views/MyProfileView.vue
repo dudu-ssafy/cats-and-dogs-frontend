@@ -9,21 +9,46 @@ const userStore = useUserStore();
 // UI 상태 관리 (0: 선택, 1: 입력, 2: 상세 프로필, 3: 정보 수정)
 const step = ref(0);
 
-// 팔로우 데이터 (추후 API 연동을 위한 더미 데이터)
+// 팔로우 데이터
 const followerCount = ref(128);
 const followingCount = ref(95);
 
-// ✅ [추가] 모달 상태 관리
+// 모달 상태 관리
 const showFollowModal = ref(false);
-const followModalType = ref('follower'); // 'follower' 또는 'following'
+const followModalType = ref('follower');
 
-// ✅ [추가] 모달용 더미 유저 리스트
+// 모달용 더미 유저 리스트
 const followListData = ref([
     { id: 1, nickname: '멍멍이맘', img: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=100', bio: '포메라니안 초코와 함께해요 🐾' },
     { id: 2, nickname: '집사일기', img: 'https://images.unsplash.com/photo-1544568100-847a948585b9?w=100', bio: '댕댕이들과의 일상을 기록합니다.' },
     { id: 3, nickname: '자연인', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', bio: '산책 친구 구함! 쪽지 주세요.' },
     { id: 4, nickname: '초코주인', img: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=100', bio: '강아지는 사랑입니다 🐶' },
 ]);
+
+// ✅ 반려동물 커뮤니티 컨셉에 맞춘 숏츠 데이터 수정
+const likedShorts = ref([
+    { id: 1, title: '솜사탕 같은 포메라니안 산책 🐾', thumbnail: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400', views: '1.5만회' },
+    { id: 2, title: '고양이 꾹꾹이 ASMR 🐱', thumbnail: 'https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?w=400', views: '8.2천회' },
+    { id: 3, title: '강아지 수제 간식 폭풍 먹방 🦴', thumbnail: 'https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=400', views: '2.1만회' },
+    { id: 4, title: '우리 집 강아지 천재성 테스트 🎓', thumbnail: 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=400', views: '12.4만회' },
+    { id: 5, title: '졸음 참는 아기 고양이 💤', thumbnail: 'https://images.unsplash.com/photo-1535930891776-0c2dfb7fda1a?w=400', views: '3.5천회' },
+]);
+
+// 숏츠 스크롤 제어 로직
+const shortsScrollRef = ref(null);
+const itemStep = 155; // 아이템 너비 + 간격
+
+const scrollNext = () => {
+    if (shortsScrollRef.value) {
+        shortsScrollRef.value.scrollBy({ left: itemStep, behavior: 'smooth' });
+    }
+};
+
+const scrollPrev = () => {
+    if (shortsScrollRef.value) {
+        shortsScrollRef.value.scrollBy({ left: -itemStep, behavior: 'smooth' });
+    }
+};
 
 onMounted(() => {
     if (!userStore.user) {
@@ -102,7 +127,6 @@ const openEditMode = () => {
     step.value = 3; 
 };
 
-// ✅ [추가] 모달 열기 함수
 const openFollowModal = (type) => {
     followModalType.value = type;
     showFollowModal.value = true;
@@ -121,15 +145,6 @@ const updateAllInfo = () => {
 
 const myPet = computed(() => userStore.petProfile);
 const goRegistration = () => router.push('/my-page/license'); 
-
-const shortsData = ref([
-    { title: '힐링 영상', img: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400' }, 
-    { title: '귀여움 주의', img: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400' }
-]);
-const activityData = ref([
-    { text: `인기글 구경함`, time: '방금 전' }, 
-    { text: `커뮤니티 가입`, time: '1일 전' }
-]);
 </script>
 
 <template>
@@ -146,7 +161,6 @@ const activityData = ref([
                         <p class="sub-text">이미 함께하고 있어요</p>
                     </div>
                 </div>
-
                 <div class="c-choice-card is-secondary" @click="selectNoPet">
                     <div class="c-choice-card__icon">🔍</div>
                     <div class="c-choice-card__text">
@@ -228,22 +242,38 @@ const activityData = ref([
                 </div>
             </div>
 
-            <div class="bottom-grid">
-                <div class="card">
-                    <h3 class="card-title">🐾 최근 활동</h3>
-                    <ul class="activity-list">
-                        <li v-for="(act, i) in activityData" :key="i">
-                            <span class="act-text">{{ act.text }}</span>
-                            <span class="act-time">{{ act.time }}</span>
-                        </li>
-                    </ul>
+            <div class="card shorts-card">
+                <div class="c-shorts-header">
+                    <h3 class="title">🐾 좋아요한 숏츠</h3>
                 </div>
-                <div class="card">
-                    <h3 class="card-title">🎬 숏츠 모아보기</h3>
-                    <div class="shorts-row">
-                        <div class="short-item" v-for="(s, i) in shortsData" :key="i" :style="{ backgroundImage: `url(${s.img})` }"></div>
-                        <div class="short-item add"><span>+</span></div>
+                
+                <div class="c-shorts-wrapper">
+                    <button class="c-nav-arrow is-left" @click="scrollPrev">
+                        <span class="material-icons-round">chevron_left</span>
+                    </button>
+
+                    <div class="c-shorts-container is-snapped" ref="shortsScrollRef">
+                        <div class="c-shorts-list">
+                            <div v-for="shorts in likedShorts" :key="shorts.id" class="c-shorts-item">
+                                <div class="c-shorts-item__screen" :style="{ backgroundImage: `url(${shorts.thumbnail})` }">
+                                    <div class="play-overlay">
+                                        <span class="material-icons-round">play_arrow</span>
+                                    </div>
+                                </div>
+                                <div class="c-shorts-item__info">
+                                    <div class="title">{{ shorts.title }}</div>
+                                    <div class="meta">조회수 {{ shorts.views }}</div>
+                                </div>
+                                <button class="more-btn">
+                                    <span class="material-icons-round">more_vert</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
+                    
+                    <button class="c-nav-arrow is-right" @click="scrollNext">
+                        <span class="material-icons-round">chevron_right</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -254,7 +284,6 @@ const activityData = ref([
                 <h2 class="section-title" style="margin:0">정보 수정</h2>
                 <div style="width:30px"></div>
             </div>
-
             <div class="card form-card">
                 <h3 class="sub-title">👤 내 정보</h3>
                 <div class="input-wrap"><label>닉네임</label><input v-model="userForm.nickname" type="text"></div>
@@ -262,27 +291,13 @@ const activityData = ref([
                     <div class="input-wrap"><label>아이디</label><input v-model="userForm.username" type="text"></div>
                     <div class="input-wrap"><label>비밀번호</label><input v-model="userForm.password" type="password"></div>
                 </div>
-                
                 <h3 class="sub-title" style="margin-top:20px;">🐶 댕댕이 정보</h3>
                 <div class="row">
                     <div class="input-wrap"><label>이름</label><input v-model="form.petName" type="text"></div>
                     <div class="input-wrap"><label>보호자</label><input v-model="form.ownerName" type="text"></div>
                 </div>
-                <div class="row">
-                    <div class="input-wrap"><label>생년월일</label><input v-model="form.birthdate" type="text"></div>
-                    <div class="input-wrap"><label>성별</label><select v-model="form.gender"><option>수컷</option><option>암컷</option></select></div>
-                </div>
-                <div class="row">
-                    <div class="input-wrap"><label>품종</label><input v-model="form.breed" type="text"></div>
-                    <div class="input-wrap"><label>중성화</label><select v-model="form.neutered"><option>완료</option><option>미완료</option></select></div>
-                </div>
-                <div class="row">
-                    <div class="input-wrap"><label>연락처</label><input v-model="form.contact" type="text"></div>
-                    <div class="input-wrap"><label>몸무게(kg)</label><input v-model="form.weight" type="text"></div>
-                </div>
                 <div class="input-wrap"><label>주소</label><input v-model="form.address" type="text"></div>
-                <div class="input-wrap"><label>한줄 소개</label><textarea v-model="form.description" rows="2" style="width:100%; padding:12px; border:2px solid #EEE; border-radius:12px; font-size:15px; background:#FAFAFA; box-sizing:border-box; font-family: inherit; resize: none;"></textarea></div>
-
+                <div class="input-wrap"><label>한줄 소개</label><textarea v-model="form.description" rows="2" class="u-textarea"></textarea></div>
                 <button class="action-btn" @click="updateAllInfo" style="background: #3E2723; color: white;">수정 완료 ✅</button>
             </div>
         </section>
@@ -313,53 +328,47 @@ const activityData = ref([
 </template>
 
 <style scoped>
-/* 공통 레이아웃 */
+/* --- 공통 레이아웃 --- */
 .safe-area { width: 100%; min-height: 100vh; background-color: #FDFCF8; padding-top: 80px; padding-bottom: 120px; box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
 .page-container { width: 100%; max-width: 600px; margin: 0 auto; padding: 0 20px; }
 .content-section { animation: fadeUp 0.5s ease; }
 .center-align { text-align: center; }
 
-/* 폰트 및 텍스트 */
+/* --- 폰트 및 텍스트 --- */
 .page-title { font-family: 'Jua'; font-size: 28px; color: #3E2723; margin-bottom: 20px; line-height: 1.4; }
 .page-title.small { font-size: 24px; text-align: left; margin: 0; }
 .section-title { font-family: 'Jua'; font-size: 24px; color: #3E2723; margin-bottom: 20px; }
-.card-title { font-family: 'Jua'; font-size: 18px; color: #5D4037; margin-bottom: 15px; }
 .main-name { font-family: 'Jua'; font-size: 32px; color: #3E2723; margin-top: 10px; margin-bottom: 5px; }
 
-/* 카드 및 컨테이너 */
+/* --- 카드 공통 오브젝트 --- */
 .card { background: white; padding: 24px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #EEE; margin-bottom: 20px; }
-.bottom-grid { display: grid; gap: 20px; }
 
-/* 팔로우 통계 */
+/* --- 팔로우 섹션 --- */
 .follow-stats { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
 .stat-link { cursor: pointer; display: flex; gap: 5px; font-size: 14px; transition: opacity 0.2s; }
-.stat-link:hover { opacity: 0.7; }
 .stat-link .label { color: #8D6E63; font-weight: 500; }
 .stat-link .value { color: #3E2723; font-weight: 800; }
 .v-divider { width: 1px; height: 12px; background: #E0E0E0; }
 
-/* 입력 폼 */
+/* --- 폼 관련 스타일 --- */
 .input-wrap { margin-bottom: 16px; text-align: left; }
 .input-wrap label { display: block; font-weight: 700; font-size: 14px; color: #5D4037; margin-bottom: 6px; }
 .input-wrap input, .input-wrap select { width: 100%; padding: 12px; border: 2px solid #EEE; border-radius: 12px; font-size: 15px; background: #FAFAFA; box-sizing: border-box; }
-.input-wrap textarea { width: 100%; padding: 12px; border: 2px solid #EEE; border-radius: 12px; font-size: 15px; background: #FAFAFA; box-sizing: border-box; font-family: inherit; resize: none;}
+.u-textarea { width: 100%; padding: 12px; border: 2px solid #EEE; border-radius: 12px; font-size: 15px; background: #FAFAFA; box-sizing: border-box; font-family: inherit; resize: none; }
 .row { display: flex; gap: 10px; }
 .row .input-wrap { flex: 1; }
 
-/* 버튼 및 아이콘 */
+/* --- 버튼 및 인터랙션 --- */
 .action-btn { width: 100%; padding: 16px; background: #3E2723; color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
 .back-btn { background: none; border: none; font-weight: 700; color: #888; cursor: pointer; margin-bottom: 10px; }
 .back-text-btn { background: none; border: none; font-size: 16px; font-weight: 700; color: #8D6E63; cursor: pointer; }
 .settings-btn { background: #FFF !important; border: 2px solid #FFF8E1 !important; color: #8D6E63 !important; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.3s ease !important; }
-.settings-btn:hover { background: #FFF8E1 !important; color: #FFB300 !important; transform: scale(1.05); }
-.settings-btn .material-icons-round { font-size: 26px; }
 
-/* 프로필 상세 전용 */
+/* --- 상세 프로필 컴포넌트 --- */
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.icon-btn { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
 .img-wrapper { position: relative; width: 120px; height: 120px; margin: 0 auto 20px; }
 .img-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-.badge-btn { position: absolute; bottom: 0; right: -10px; background: white; border: 2px solid #E3F2FD; color: #1976D2; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; z-index: 99; white-space: nowrap; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+.badge-btn { position: absolute; bottom: 0; right: -10px; background: white; border: 2px solid #E3F2FD; color: #1976D2; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; z-index: 99; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
 .info-text { text-align: center; }
 .sub-badge { background: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; }
 .desc { font-size: 15px; color: #6D4C41; margin-bottom: 15px; }
@@ -368,39 +377,44 @@ const activityData = ref([
 .stats-grid { display: flex; justify-content: space-around; background: #FAFAFA; padding: 15px; border-radius: 12px; margin-top: 15px; }
 .stat-val { font-weight: 700; color: #3E2723; font-size: 16px; }
 .divider { width: 1px; background: #EEE; }
+.sub-title { font-family: 'Jua'; font-size: 18px; color: #FFB300; margin-bottom: 15px; border-bottom: 2px solid #FFF8E1; padding-bottom: 5px; text-align: left; }
 
-/* 리스트 섹션 */
-.activity-list { list-style: none; padding: 0; margin: 0; }
-.activity-list li { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #EEE; font-size: 14px; }
-.shorts-row { display: flex; gap: 10px; }
-.short-item { width: 70px; height: 70px; border-radius: 12px; background-size: cover; background-position: center; background-color: #EEE; }
-.short-item.add { display: flex; align-items: center; justify-content: center; border: 2px dashed #DDD; background: white; color: #DDD; cursor: pointer; font-size: 24px; }
-.sub-title { font-size: 16px; font-weight: 800; color: #FFB300; margin-bottom: 15px; border-bottom: 2px solid #FFF8E1; padding-bottom: 5px; text-align: left; }
+/* --- [OOCSS] c-shorts-header (타이틀 디자인 수정) --- */
+.c-shorts-header { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #FFF8E1; }
+.c-shorts-header .title { font-family: 'Jua'; font-size: 20px; color: #5D4037; display: flex; align-items: center; gap: 8px; }
 
-/* OOCSS: c-choice-card */
-.c-choice-card { display: flex; align-items: center; gap: 20px; padding: 24px; border-radius: 24px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; border: 2px solid transparent; text-align: left; }
-.c-choice-card:hover { transform: translateY(-5px); }
-.c-choice-card__icon { font-size: 32px; background: white; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-.c-choice-card__text .title { margin: 0; font-size: 18px; font-weight: 800; color: #3E2723; }
-.c-choice-card__text .sub-text { margin: 4px 0 0; font-size: 13px; color: #8D6E63; opacity: 0.8; }
+/* --- [OOCSS] c-shorts-wrapper (구조) --- */
+.c-shorts-wrapper { position: relative; width: 100%; }
+.c-shorts-container { width: 100%; overflow-x: auto; display: flex; padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.c-shorts-container::-webkit-scrollbar { display: none; }
+.c-shorts-list { display: flex; gap: 10px; padding: 0 5px; }
+.is-snapped { scroll-snap-type: x mandatory; }
+
+/* --- [OOCSS] c-nav-arrow (화살표 스킨) --- */
+.c-nav-arrow { position: absolute; top: 40%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; background: white; border: 2px solid #FFF8E1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.3s ease; }
+.c-nav-arrow:hover { background: #FFF8E1; transform: translateY(-50%) scale(1.1); color: #FFB300; }
+.c-nav-arrow .material-icons-round { font-size: 28px; }
+.is-left { left: -15px; }
+.is-right { right: -15px; }
+
+/* --- [OOCSS] c-shorts-item --- */
+.c-shorts-item { flex: 0 0 145px; position: relative; text-align: left; scroll-snap-align: start; }
+.c-shorts-item__screen { width: 100%; aspect-ratio: 9 / 16; border-radius: 12px; background-size: cover; background-position: center; background-color: #F0F0F0; position: relative; overflow: hidden; margin-bottom: 8px; }
+.play-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+.c-shorts-item:hover .play-overlay { opacity: 1; }
+.play-overlay .material-icons-round { color: white; font-size: 36px; }
+
+.c-shorts-item__info { padding-right: 18px; }
+.c-shorts-item__info .title { font-size: 13px; font-weight: 700; color: #0F0F0F; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 2px; }
+.c-shorts-item__info .meta { font-size: 12px; color: #606060; }
+.more-btn { position: absolute; bottom: 32px; right: -4px; background: none; border: none; color: #0F0F0F; padding: 4px; cursor: pointer; }
+
+/* --- 기타 공통 스타일 --- */
+.c-choice-card { display: flex; align-items: center; gap: 20px; padding: 24px; border-radius: 24px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; text-align: left; }
 .is-primary { background-color: #FFF9E6; border-color: #FFE082; }
 .is-secondary { background-color: #F5F5F5; border-color: #E0E0E0; }
-
-/* ✅ [추가] OOCSS: 모달 레이아웃 & 유저 아이템 */
 .c-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-.c-modal-window { background: white; width: 100%; max-width: 400px; border-radius: 28px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: fadeUp 0.4s ease-out; }
-.c-modal-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F5F5F5; }
-.c-modal-header .title { font-family: 'Jua'; font-size: 20px; color: #3E2723; margin: 0; }
-.c-modal-header .close-btn { background: none; border: none; cursor: pointer; color: #999; }
-.c-modal-body { max-height: 400px; overflow-y: auto; padding: 10px 20px; }
-
-.c-user-item { display: flex; align-items: center; gap: 12px; padding: 15px 0; border-bottom: 1px solid #FAFAFA; }
-.c-user-item:last-child { border-bottom: none; }
-.c-user-item__avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 1px solid #EEE; }
-.c-user-item__info { flex: 1; text-align: left; }
-.c-user-item__info .name { font-weight: 700; color: #3E2723; font-size: 15px; }
-.c-user-item__info .bio { font-size: 12px; color: #8D6E63; margin-top: 2px; }
-.c-user-item__btn { background: #FFF8E1; color: #FFB300; border: none; padding: 6px 14px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.c-modal-window { background: white; width: 100%; max-width: 400px; border-radius: 28px; overflow: hidden; animation: fadeUp 0.4s ease-out; }
 
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>

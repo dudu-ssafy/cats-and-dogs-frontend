@@ -176,7 +176,7 @@ const goToCommunity = (sortType) => {
 
 // 게시글 상세 이동
 const goToPostDetail = (id) => {
-  // router.push({ name: 'CommunityDetail', params: { id: id } });
+  router.push({ name: 'community-detail', params: { id: id } });
   alert(`${id}번 게시글 상세 페이지로 이동합니다!`);
 };
 

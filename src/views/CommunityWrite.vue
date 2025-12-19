@@ -13,6 +13,11 @@ const category = ref('qna');
 const title = ref('');
 const editorRef = ref(null); // 에디터 DOM 접근용
 
+// ✅ [추가] 사이드바 메뉴 클릭 시 목록 페이지로 이동하며 쿼리 전달
+const goCategory = (cat) => {
+    router.push({ path: '/community', query: { category: cat } });
+};
+
 // 뒤로 가기
 const goBack = () => {
     if(confirm('작성 중인 내용이 사라집니다. 취소하시겠습니까?')) {
@@ -56,7 +61,8 @@ const submitPost = () => {
         date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         views: 0,
         isNew: true,
-        content: contentHtml
+        content: contentHtml,
+        isLiked: false // 기본 좋아요 상태
     };
 
     // 저장 및 이동
@@ -85,24 +91,41 @@ const handleImageClick = () => {
         
         <aside class="sidebar">
             <div class="login-card">
-                <span class="emoji-icon">👋</span>
-                <div class="welcome-text">
-                    반가워요!<br>
-                    <span style="color:var(--text-title); font-weight:800;">
-                        {{ userStore.user?.nickname || '회원' }}님
-                    </span>
-                </div>
-                <button class="btn-profile">내 정보 보기</button>
+                <template v-if="userStore.isLogin && userStore.user">
+                    <div 
+                        class="profile-thumb" 
+                        :style="{ backgroundImage: `url(${userStore.user.profileImg})` }"
+                        @click="router.push('/my-profile')"
+                    ></div>
+                    <p class="login-msg welcome-text">
+                        <span style="font-size: 20px;">👋</span> 반가워요!<br>
+                        <span style="color:#F57F17; font-weight:800">{{ userStore.user.nickname }}</span>님 🐾
+                    </p>
+                    
+                    <div class="user-activities">
+                        <div class="activity-link" @click="goCategory('my-posts')">
+                            <span class="material-icons-round">article</span> 내가 쓴 글
+                        </div>
+                        <div class="activity-link" @click="goCategory('liked-posts')">
+                            <span class="material-icons-round">favorite_border</span> 내가 좋아요한 글
+                        </div>
+                    </div>
+                </template>
+                <template v-else>
+                    <div style="font-size:32px; margin-bottom:8px;">👋</div>
+                    <p class="login-msg">로그인하고<br>집사들과 소통해보세요!</p>
+                    <button class="btn-login-sidebar" @click="router.push('/login')">로그인 / 회원가입</button>
+                </template>
             </div>
 
             <div class="menu-group">
                 <div class="menu-head">게시판</div>
                 <ul class="menu-list">
-                    <li><span class="material-icons-round menu-icon">format_list_bulleted</span> 전체글</li>
-                    <li><span class="material-icons-round menu-icon">local_fire_department</span> 인기글</li>
-                    <li><span class="material-icons-round menu-icon">chat_bubble_outline</span> 자유 수다</li>
-                    <li><span class="material-icons-round menu-icon">help_outline</span> 질문/답변</li>
-                    <li><span class="material-icons-round menu-icon">tips_and_updates</span> 정보 공유</li>
+                    <li @click="goCategory('all')"><span class="material-icons-round menu-icon">format_list_bulleted</span> 전체글</li>
+                    <li @click="goCategory('hot')"><span class="material-icons-round menu-icon">local_fire_department</span> 인기글</li>
+                    <li @click="goCategory('free')"><span class="material-icons-round menu-icon">chat_bubble_outline</span> 자유 수다</li>
+                    <li @click="goCategory('qna')"><span class="material-icons-round menu-icon">help_outline</span> 질문/답변</li>
+                    <li @click="goCategory('info')"><span class="material-icons-round menu-icon">tips_and_updates</span> 정보 공유</li>
                 </ul>
             </div>
         </aside>
@@ -193,21 +216,22 @@ const handleImageClick = () => {
 .sidebar { width: 220px; flex-shrink: 0; }
 .main-content { flex: 1; min-width: 0; }
 
-/* 사이드바 */
-.login-card { background: white; padding: 32px 20px; border: 1px solid var(--line-border); border-radius: var(--radius-lg); text-align: center; margin-bottom: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-.emoji-icon { font-size: 40px; display: block; margin-bottom: 12px; }
+/* 사이드바 스타일 (View와 통일) */
+.login-card { background: white; padding: 24px 20px; border: 1px solid var(--line-border); border-radius: var(--radius-lg); text-align: center; margin-bottom: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+.profile-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #EEE; border: 3px solid #FFD54F; margin: 0 auto 12px; background-size: cover; background-position: center; cursor: pointer; }
 .welcome-text { font-size: 14px; color: var(--text-body); margin-bottom: 20px; line-height: 1.5; font-weight: 700; }
-.btn-profile { width: 100%; padding: 10px; background: #FFF8E1; color: #FFB300; font-size: 13px; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; }
-.btn-profile:hover { background: #FFECB3; }
+.user-activities { border-top: 1px dashed var(--line-border); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.activity-link { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-body); font-weight: 600; padding: 4px 8px; border-radius: 6px; transition: 0.2s; cursor: pointer; }
+.activity-link:hover { background: #FFFDE7; color: var(--primary-deep); }
+.activity-link .material-icons-round { font-size: 18px; color: #FFB300; }
+.btn-login-sidebar { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
 
 .menu-head { font-size: 12px; font-weight: 700; color: #C4C4C4; margin-bottom: 12px; padding-left: 12px; }
 .menu-list { list-style: none; padding: 0; margin: 0; }
 .menu-list li { padding: 12px 16px; font-size: 15px; font-weight: 700; color: var(--text-body); border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; margin-bottom: 4px; }
-.menu-list li:hover { background: #FAFAFA; color: var(--text-title); }
-/* .active 클래스 스타일은 삭제하지 않고 남겨두되, HTML에서 클래스를 뺐으므로 적용 안 됨 */
-.menu-list li.active { background: var(--accent-butter); color: var(--accent-text); font-weight: 800; }
+.menu-list li:hover { background: var(--accent-butter); color: #F57F17; }
 
-/* 글쓰기 폼 */
+/* 글쓰기 폼 스타일 */
 .write-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--line-border); box-shadow: var(--shadow-card); padding: 40px; }
 .write-header { margin-bottom: 32px; border-bottom: 1px solid var(--line-border); padding-bottom: 20px; }
 .page-title { font-size: 24px; font-weight: 800; color: var(--text-title); display: flex; align-items: center; gap: 8px; }
@@ -219,7 +243,6 @@ const handleImageClick = () => {
 .input-skin:focus, .input-skin:focus-within { background: white; border-color: var(--primary-honey); box-shadow: 0 0 0 3px var(--accent-butter); outline: none; }
 input.input-skin, select.input-skin { padding: 14px 16px; font-size: 15px; outline: none; }
 
-/* 에디터 스타일 */
 .editor-wrapper { display: flex; flex-direction: column; overflow: hidden; min-height: 500px; }
 .editor-toolbar { background: #F5F5F5; border-bottom: 1px solid var(--line-border); padding: 10px 16px; display: flex; gap: 8px; align-items: center; }
 .divider { width: 1px; height: 20px; background: #DDD; margin: 0 8px; }
@@ -227,15 +250,11 @@ input.input-skin, select.input-skin { padding: 14px 16px; font-size: 15px; outli
 .tool-btn { border: none; background: transparent; cursor: pointer; color: var(--text-body); padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .tool-btn:hover { background: rgba(0,0,0,0.05); color: var(--text-title); }
 .tool-btn.img-btn { color: #F57F17; }
-.tool-btn.img-btn:hover { background: #FFF8E1; }
 
 .editor-content { flex: 1; padding: 24px; outline: none; background: white; font-size: 16px; color: var(--text-body); overflow-y: auto; line-height: 1.6; }
-.editor-content img { max-width: 100%; border-radius: 8px; margin: 10px 0; cursor: default; }
-
 .action-buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px; border-top: 1px solid var(--line-border); padding-top: 24px; }
 .btn-base { padding: 12px 32px; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; transition: all 0.2s; border: none; }
 .btn-cancel { background: white; border: 1px solid var(--line-border); color: var(--text-body); }
-.btn-cancel:hover { background: #F5F5F5; }
 .btn-submit { background: var(--primary-honey); color: white; box-shadow: 0 4px 10px rgba(255, 213, 79, 0.3); }
 .btn-submit:hover { background: var(--primary-deep); transform: translateY(-2px); }
 </style>

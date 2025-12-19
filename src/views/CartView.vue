@@ -1,12 +1,10 @@
 <script setup>
 import { computed } from 'vue';
+import { useRouter } from 'vue-router'; // 👈 라우터 추가
 import { useCartStore } from '@/stores/cart';
 
-
-const store = useCartStore(); // 👈 스토어 사용 시작
-
-// 기존 cartItems 변수 삭제하고 store.cartItems 사용
-// 기존 removeItem 함수 삭제하고 store.removeItem 사용
+const store = useCartStore();
+const router = useRouter(); // 👈 라우터 사용
 
 // 수량 조절 함수 (직접 store 데이터 수정)
 const increase = (item) => item.quantity++;
@@ -16,7 +14,6 @@ const decrease = (item) => {
 
 // 선택 삭제 로직 수정
 const removeSelected = () => {
-  // store의 데이터를 직접 수정
   store.cartItems = store.cartItems.filter(item => !item.selected);
 };
 
@@ -31,6 +28,15 @@ const finalPrice = computed(() => store.totalProductPrice + shippingFee.value);
 
 // 숫자 콤마
 const formatPrice = (num) => num.toLocaleString();
+
+// 👈 결제하기 버튼 클릭 시 Order 페이지로 이동하는 함수
+const goToOrder = () => {
+  if (store.cartItems.length === 0) {
+    alert('장바구니에 담긴 상품이 없습니다.');
+    return;
+  }
+  router.push({ name: 'ShopOrder'}); // 라우터 설정에 따라 '/order' 또는 { name: 'Order' }로 변경 가능
+};
 </script>
 
 <template>
@@ -70,7 +76,21 @@ const formatPrice = (num) => num.toLocaleString();
                   <span>총 상품금액</span>
                   <span style="font-weight:700">{{ formatPrice(store.totalProductPrice) }}원</span>
               </div>
+              
+              <div class="summary-row">
+                  <span>배송비</span>
+                  <span style="font-weight:700">+{{ formatPrice(shippingFee) }}원</span>
               </div>
+
+              <div class="summary-row total">
+                  <span>최종 결제금액</span>
+                  <span class="total-price">{{ formatPrice(finalPrice) }}원</span>
+              </div>
+
+              <button class="btn-order" @click="goToOrder">
+                {{ store.cartCount }}개 상품 결제하기
+              </button>
+          </div>
       </div>
     </div>
   </div>
@@ -78,10 +98,9 @@ const formatPrice = (num) => num.toLocaleString();
 
 
 <style scoped>
-/* 외부 폰트 import 삭제 (App.vue에 있음) */
+/* CSS는 건드리지 않았습니다. 기존에 작성하신 .btn-order 스타일이 그대로 적용됩니다. */
 
 .cart-wrapper {
-  /* 기존 테마 색상 변수 가져오기 */
   --bg-body: #F5F7FA;
   --bg-white: #FFFFFF;
   --primary-honey: #FFD54F;
@@ -102,14 +121,12 @@ const formatPrice = (num) => num.toLocaleString();
 button { font-family: 'NanumSquareRound', sans-serif; border: none; cursor: pointer; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
 
-/* 2. Cart Layout */
 .page-title { font-size: 32px; font-weight: 800; margin: 40px 0 24px; }
 
 .cart-container {
     display: grid; grid-template-columns: 2fr 1fr; gap: 40px; padding-bottom: 100px;
 }
 
-/* 왼쪽: 상품 리스트 */
 .cart-list-box {
     background: var(--bg-white); border-radius: 24px;
     box-shadow: var(--shadow-card); border: 1px solid var(--line-border);
@@ -125,14 +142,12 @@ button { font-family: 'NanumSquareRound', sans-serif; border: none; cursor: poin
 .btn-delete-sel { font-size: 14px; color: #999; background: transparent; }
 .btn-delete-sel:hover { color: var(--sale-red); text-decoration: underline; }
 
-/* 상품 아이템 */
 .cart-item {
     display: flex; align-items: center; gap: 20px; padding: 32px 0;
     border-bottom: 1px dashed var(--line-border);
 }
 .cart-item:last-child { border-bottom: none; }
 
-/* 체크박스 커스텀 */
 input[type="checkbox"] {
     width: 20px; height: 20px; accent-color: var(--primary-orange); cursor: pointer;
 }
@@ -147,7 +162,6 @@ input[type="checkbox"] {
 .item-name { font-size: 16px; font-weight: 700; color: var(--text-title); margin-bottom: 8px; line-height: 1.4; }
 .item-opt { font-size: 13px; color: #9CA3AF; background: #F9FAFB; padding: 4px 8px; border-radius: 6px; display: inline-block; }
 
-/* 수량 조절 버튼 */
 .qty-box {
     display: flex; align-items: center; border: 1px solid var(--line-border);
     border-radius: 8px; overflow: hidden; width: 100px; height: 32px;
@@ -169,7 +183,6 @@ input[type="checkbox"] {
 .btn-delete:hover { color: var(--sale-red); }
 
 
-/* 오른쪽: 결제 정보 (Sticky) */
 .price-summary-box {
     background: var(--bg-white); border-radius: 24px;
     box-shadow: var(--shadow-card); border: 1px solid var(--line-border);
