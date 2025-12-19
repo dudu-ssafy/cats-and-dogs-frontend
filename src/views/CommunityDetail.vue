@@ -16,6 +16,14 @@ onMounted(() => {
 
     if (foundPost) {
         post.value = foundPost;
+        
+        // ✅ [추가] 목록과 데이터 동기화: 저장된 좋아요 상태와 카운트를 가져옴
+        isLiked.value = foundPost.isLiked || false;
+        if (foundPost.likeCount !== undefined) {
+            likeCount.value = foundPost.likeCount;
+        }
+
+        // 조회수 증가 및 저장
         foundPost.views++;
         localStorage.setItem('community-posts', JSON.stringify(allPosts));
     } else {
@@ -28,9 +36,26 @@ const goList = () => {
     router.push('/community');
 };
 
+// ✅ [수정] 좋아요 토글 시 localStorage의 데이터까지 수정
 const toggleLike = () => {
+    if (!post.value) return;
+
+    // 1. 현재 화면의 반응형 변수 변경 (UI 반영)
     isLiked.value = !isLiked.value;
     likeCount.value += isLiked.value ? 1 : -1;
+
+    // 2. localStorage 데이터 업데이트 (다른 페이지와 연동)
+    const allPosts = JSON.parse(localStorage.getItem('community-posts') || '[]');
+    const postIndex = allPosts.findIndex(p => p.id === post.value.id);
+
+    if (postIndex !== -1) {
+        // 실제 저장소의 해당 게시글 데이터 수정
+        allPosts[postIndex].isLiked = isLiked.value;
+        allPosts[postIndex].likeCount = likeCount.value;
+
+        // 3. 수정된 전체 배열을 다시 저장
+        localStorage.setItem('community-posts', JSON.stringify(allPosts));
+    }
 };
 </script>
 

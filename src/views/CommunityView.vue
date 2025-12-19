@@ -23,11 +23,11 @@ const goWrite = () => {
     router.push('/community/write');
 };
 
-// ✅ 화면을 꽉 채울 테스트 데이터 (15개)
+// ✅ 테스트를 위해 데이터 일부 수정 (author: '본인닉네임' 혹은 isLiked 추가)
 const initialData = [
-    { id: 4224, category: 'qna', categoryName: '질문', title: '강아지가 산책 중 풀을 뜯어먹는데 괜찮나요?', author: '풀밭위의견', date: '15:10', views: 12, isNew: true },
-    { id: 4223, category: 'free', categoryName: '자유', title: '퇴근하고 집에 오니 휴지 파티가 열렸네요 ^^...', author: '해탈한집사', date: '14:55', views: 45, isNew: true },
-    { id: 4222, category: 'info', categoryName: '정보', title: '고양이 음수량 늘리는 확실한 방법 (습식 추천)', author: '물먹는하마', date: '14:40', views: 88, isNew: true },
+    { id: 4224, category: 'qna', categoryName: '질문', title: '강아지가 산책 중 풀을 뜯어먹는데 괜찮나요?', author: '풀밭위의견', date: '15:10', views: 12, isNew: true, isLiked: true },
+    { id: 4223, category: 'free', categoryName: '자유', title: '퇴근하고 집에 오니 휴지 파티가 열렸네요 ^^...', author: '해탈한집사', date: '14:55', views: 45, isNew: true, isLiked: false },
+    { id: 4222, category: 'info', categoryName: '정보', title: '고양이 음수량 늘리는 확실한 방법 (습식 추천)', author: '물먹는하마', date: '14:40', views: 88, isNew: true, isLiked: true },
     { id: 4221, category: 'free', categoryName: '자유', title: '주말에 펫페어 가시는 분 계신가요?', author: '쇼핑중독', date: '14:30', views: 102, isNew: false },
     { id: 4220, category: 'qna', categoryName: '질문', title: '사료를 바꿨는데 눈물이 터졌어요 ㅠㅠ', author: '눈물자국', date: '14:25', views: 67, isNew: false },
     { id: 4219, category: 'info', categoryName: '정보', title: '반려견 동반 가능한 서울 근교 카페 리스트', author: '카페투어', date: '14:22', views: 310, isNew: false },
@@ -42,43 +42,41 @@ const initialData = [
     { id: 4209, category: 'free', categoryName: '자유', title: '강아지 옷 샀는데 사이즈 실패했어요 나눔합니다', author: '천사견', date: '10:10', views: 55, isNew: false },
 ];
 
-// ✅ [핵심] 데이터 불러오기 로직 수정
 onMounted(() => {
     const saved = localStorage.getItem('community-posts');
     
     if (saved) {
-        // 저장된 데이터가 있으면 불러옴
         const parsed = JSON.parse(saved);
-        // 만약 저장된 데이터가 너무 적으면(테스트 데이터가 없으면), 초기 데이터와 합치거나 덮어씌움
-        // 여기서는 간단하게 "비어있거나 적으면 초기화" 로직을 적용해 10개가 보이도록 보장합니다.
         if (parsed.length < 5) {
-             // 기존 글 유지하면서 테스트 데이터 뒤에 붙이기 (선택 사항)
-             // 여기서는 깔끔하게 초기 데이터로 리셋합니다. 
-             // (※ 주의: 이전에 쓴 글이 사라질 수 있습니다. 글 보존이 중요하다면 아래 로직을 수정해야 함)
-             posts.value = initialData;
-             localStorage.setItem('community-posts', JSON.stringify(initialData));
+            posts.value = initialData;
+            localStorage.setItem('community-posts', JSON.stringify(initialData));
         } else {
             posts.value = parsed;
         }
     } else {
-        // 저장된 게 없으면 15개 테스트 데이터를 넣어서 10개가 꽉 차게 보이게 함
         posts.value = initialData;
         localStorage.setItem('community-posts', JSON.stringify(initialData));
     }
 
-    // 정렬 쿼리 처리
     if (route.query.sort) {
         if (route.query.sort === 'popular') currentCategory.value = 'hot';
         else if (route.query.sort === 'latest') currentCategory.value = 'all';
     }
 });
 
+// ✅ 필터링 로직 수정 (내가 쓴 글 / 좋아요한 글 추가)
 const filteredPosts = computed(() => {
     let result = [];
     if (currentCategory.value === 'all') {
         result = posts.value;
     } else if (currentCategory.value === 'hot') {
         result = posts.value.filter(p => p.views >= 100).sort((a,b) => b.views - a.views);
+    } else if (currentCategory.value === 'my-posts') {
+        // 내가 작성한 글: 현재 로그인한 유저 닉네임과 작성자 비교
+        result = posts.value.filter(p => p.author === userStore.user?.nickname);
+    } else if (currentCategory.value === 'liked-posts') {
+        // 내가 좋아요한 글: 데이터 내 isLiked가 true인 것만 (실제로는 API 연동 필요)
+        result = posts.value.filter(p => p.isLiked === true);
     } else {
         result = posts.value.filter(p => p.category === currentCategory.value);
     }
@@ -125,12 +123,20 @@ const setCategory = (cat) => {
                     </p>
                     
                     <div class="user-activities">
-                        <router-link to="/my-profile?tab=posts" class="activity-link">
+                        <div 
+                            class="activity-link" 
+                            :class="{ active: currentCategory === 'my-posts' }"
+                            @click="setCategory('my-posts')"
+                        >
                             <span class="material-icons-round">article</span> 내가 쓴 글
-                        </router-link>
-                        <router-link to="/my-profile?tab=comments" class="activity-link">
-                            <span class="material-icons-round">chat_bubble_outline</span> 내가 쓴 댓글
-                        </router-link>
+                        </div>
+                        <div 
+                            class="activity-link" 
+                            :class="{ active: currentCategory === 'liked-posts' }"
+                            @click="setCategory('liked-posts')"
+                        >
+                            <span class="material-icons-round">favorite_border</span> 내가 좋아요한 글
+                        </div>
                     </div>
 
                 </template>
@@ -210,6 +216,8 @@ const setCategory = (cat) => {
                     {{ 
                         currentCategory === 'all' ? '전체글' : 
                         currentCategory === 'hot' ? '인기글' : 
+                        currentCategory === 'my-posts' ? '내가 쓴 글' :
+                        currentCategory === 'liked-posts' ? '내가 좋아요한 글' :
                         currentCategory === 'free' ? '자유 수다' :
                         currentCategory === 'qna' ? '질문/답변' : '정보 공유'
                     }}
@@ -279,15 +287,19 @@ const setCategory = (cat) => {
 </template>
 
 <style scoped>
-/* CSS는 기존과 100% 동일합니다 */
+/* OOCSS 기반 피드백: 
+   .activity-link와 .menu-list li는 공통적인 '네비게이션 아이템'의 구조를 가집니다.
+   이들을 .c-nav-item 같은 객체로 정의하면 중복 코드를 줄일 수 있습니다.
+*/
+
 .profile-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #EEE; border: 3px solid #FFD54F; margin: 0 auto 12px; background-size: cover; background-position: center; cursor: pointer; }
 .welcome-text { margin-bottom: 20px !important; }
 .btn-login { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
 .btn-login:hover { background: var(--primary-deep); }
 .btn-write-card, .btn-logout { display: none; } 
 .user-activities { border-top: 1px dashed var(--line-border); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
-.activity-link { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-body); font-weight: 600; padding: 4px 8px; border-radius: 6px; transition: 0.2s; }
-.activity-link:hover { background: #FFFDE7; color: var(--primary-deep); }
+.activity-link { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-body); font-weight: 600; padding: 4px 8px; border-radius: 6px; transition: 0.2s; cursor: pointer; }
+.activity-link:hover, .activity-link.active { background: #FFFDE7; color: var(--primary-deep); }
 .activity-link .material-icons-round { font-size: 18px; color: #FFB300; }
 .community-page { --bg-base: #FDFCF8; --bg-white: #FFFFFF; --primary-honey: #FFD54F; --primary-deep: #FFC107; --accent-butter: #FFFDE7; --text-title: #4A3F35; --text-body: #5D5D5D; --text-caption: #999999; --line-border: #EAEAEA; --radius-lg: 20px; background-color: var(--bg-base); min-height: 100vh; color: var(--text-title); font-family: 'NanumSquareRound', sans-serif; padding-top: 40px; }
 a { text-decoration: none; color: inherit; }
