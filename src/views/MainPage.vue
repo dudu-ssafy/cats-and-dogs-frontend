@@ -150,6 +150,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router'; 
+import api from '@/api';
 
 const router = useRouter();
 const searchQuery = ref('');
@@ -163,13 +164,10 @@ const goToAiDiagnosis = () => {
   router.push({ name: 'AiDiagnosis', query: { symptom: searchQuery.value } });
 };
 
-// ✅ [핵심] 커뮤니티 메인으로 이동 (정렬 기준 전달)
+// 커뮤니티 메인으로 이동 (정렬 기준 전달)
 const goToCommunity = (sortType) => {
-  // sortType에는 'popular' 또는 'latest'가 들어옵니다.
-  // 나중에 커뮤니티 페이지에서 route.query.sort로 받아서 처리하면 됩니다.
-  
   router.push({ 
-    name: 'community', // ⚠️ 라우터 이름이 CommunityMain인지 꼭 확인하세요!
+    name: 'community',
     query: { sort: sortType } 
   });
 };
@@ -177,21 +175,44 @@ const goToCommunity = (sortType) => {
 // 게시글 상세 이동
 const goToPostDetail = (id) => {
   router.push({ name: 'community-detail', params: { id: id } });
-  alert(`${id}번 게시글 상세 페이지로 이동합니다!`);
 };
 
 // 1. 게시판 데이터
-const hotPosts = ref([
-  { id: 101, title: '강아지 편식 고치는 꿀팁 공유해요', likes: '1.2k' },
-  { id: 102, title: '캣타워 내돈내산 솔직 비교!', likes: '980' },
-  { id: 103, title: '산책할 때 진드기 예방법 ㅠㅠ', likes: '850' }
-]);
+const hotPosts = ref([]);
+const livePosts = ref([]);
 
-const livePosts = ref([
-  { id: 201, title: '3개월 비숑 사료량 얼마나 주나요?', time: '방금' },
-  { id: 202, title: '마포구 친절한 동물병원 추천좀요', time: '5분 전' },
-  { id: 203, title: '고양이가 이불에 오줌을 쌌어요...', time: '12분 전' }
-]);
+const formatTime = (dateString) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = (now - date) / 1000; // seconds
+
+  if (diff < 60) return '방금 전';
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  return `${Math.floor(diff / 86400)}일 전`;
+};
+
+const fetchBoardData = async () => {
+  try {
+    // 인기글 가져오기
+    const popularRes = await api.get('/boards/popular/');
+    hotPosts.value = popularRes.data.slice(0, 3).map(post => ({
+      id: post.id,
+      title: post.title,
+      likes: post.likes_count >= 1000 ? `${(post.likes_count/1000).toFixed(1)}k` : post.likes_count
+    }));
+
+    // 최신글 가져오기 (페이지네이션 적용된 결과에서 results 추출)
+    const latestRes = await api.get('/boards/?page_size=3');
+    livePosts.value = latestRes.data.results.map(post => ({
+      id: post.id,
+      title: post.title,
+      time: formatTime(post.created_at)
+    }));
+  } catch (error) {
+    console.error('Failed to fetch board data:', error);
+  }
+};
 
 // 2. 퀴즈 로직
 const currentQuizIdx = ref(0);
@@ -231,8 +252,10 @@ const changeQuiz = (direction) => {
   currentQuizIdx.value = nextIdx;
 };
 
-// 3. 스크롤 애니메이션
+// 3. 스크롤 애니메이션 및 데이터 로드
 onMounted(() => {
+  fetchBoardData();
+  
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) entry.target.classList.add('active');
