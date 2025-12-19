@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user'; // ✅ userStore 임포트
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore(); // ✅ userStore 인스턴스
 
 const post = ref(null); 
 const isLiked = ref(false); 
@@ -17,13 +19,12 @@ onMounted(() => {
     if (foundPost) {
         post.value = foundPost;
         
-        // ✅ [추가] 목록과 데이터 동기화: 저장된 좋아요 상태와 카운트를 가져옴
+        // 목록과 데이터 동기화
         isLiked.value = foundPost.isLiked || false;
         if (foundPost.likeCount !== undefined) {
             likeCount.value = foundPost.likeCount;
         }
 
-        // 조회수 증가 및 저장
         foundPost.views++;
         localStorage.setItem('community-posts', JSON.stringify(allPosts));
     } else {
@@ -36,24 +37,25 @@ const goList = () => {
     router.push('/community');
 };
 
-// ✅ [수정] 좋아요 토글 시 localStorage의 데이터까지 수정
+
+// ✅ [추가] 사이드바 클릭 시 목록 페이지로 이동하며 쿼리(카테고리 정보)를 전달하는 함수
+const goCategory = (cat) => {
+    router.push({ path: '/community', query: { category: cat } });
+};
+
+// 좋아요 토글 시 localStorage의 데이터까지 수정
 const toggleLike = () => {
     if (!post.value) return;
 
-    // 1. 현재 화면의 반응형 변수 변경 (UI 반영)
     isLiked.value = !isLiked.value;
     likeCount.value += isLiked.value ? 1 : -1;
 
-    // 2. localStorage 데이터 업데이트 (다른 페이지와 연동)
     const allPosts = JSON.parse(localStorage.getItem('community-posts') || '[]');
     const postIndex = allPosts.findIndex(p => p.id === post.value.id);
 
     if (postIndex !== -1) {
-        // 실제 저장소의 해당 게시글 데이터 수정
         allPosts[postIndex].isLiked = isLiked.value;
         allPosts[postIndex].likeCount = likeCount.value;
-
-        // 3. 수정된 전체 배열을 다시 저장
         localStorage.setItem('community-posts', JSON.stringify(allPosts));
     }
 };
@@ -65,26 +67,47 @@ const toggleLike = () => {
         
         <aside class="sidebar">
             <div class="login-card">
-                <span class="emoji-icon">👋</span>
-                <div class="welcome-text">반가워요!<br><span style="color:var(--text-title)">최두용님</span></div>
-                <button class="btn-profile">내 정보 보기</button>
+                <template v-if="userStore.isLogin && userStore.user">
+                    <div 
+                        class="profile-thumb" 
+                        :style="{ backgroundImage: `url(${userStore.user.profileImg})` }"
+                        @click="router.push('/my-profile')"
+                    ></div>
+                    <p class="login-msg welcome-text">
+                        <span style="font-size: 20px;">👋</span> 반가워요!<br>
+                        <span style="color:#F57F17; font-weight:800">{{ userStore.user.nickname }}</span>님 🐾
+                    </p>
+                    
+                    <div class="user-activities">
+                        <div class="activity-link" @click="goCategory('my-posts')">
+                            <span class="material-icons-round">article</span> 내가 쓴 글
+                        </div>
+                        <div class="activity-link" @click="goCategory('liked-posts')">
+                            <span class="material-icons-round">favorite_border</span> 내가 좋아요한 글
+                        </div>
+                    </div>
+                </template>
+                <template v-else>
+                    <div style="font-size:32px; margin-bottom:8px;">👋</div>
+                    <p class="login-msg">로그인하고<br>집사들과 소통해보세요!</p>
+                    <button class="btn-login" @click="router.push('/login')">로그인 / 회원가입</button>
+                </template>
             </div>
+
             <div class="menu-group">
                 <div class="menu-head">게시판</div>
                 <ul class="menu-list">
-                    <li><span class="material-icons-round menu-icon">format_list_bulleted</span> 전체글</li>
-                    <li><span class="material-icons-round menu-icon">local_fire_department</span> 인기글</li>
-                    <li><span class="material-icons-round menu-icon">chat_bubble_outline</span> 자유 수다</li>
-                    <li class="active"><span class="material-icons-round menu-icon">help_outline</span> 질문/답변</li>
-                    <li><span class="material-icons-round menu-icon">tips_and_updates</span> 정보 공유</li>
+                    <li @click="goCategory('all')"><span class="material-icons-round menu-icon">format_list_bulleted</span> 전체글</li>
+                    <li @click="goCategory('hot')"><span class="material-icons-round menu-icon">local_fire_department</span> 인기글</li>
+                    <li @click="goCategory('free')"><span class="material-icons-round menu-icon">chat_bubble_outline</span> 자유 수다</li>
+                    <li @click="goCategory('qna')"><span class="material-icons-round menu-icon">help_outline</span> 질문/답변</li>
+                    <li @click="goCategory('info')"><span class="material-icons-round menu-icon">tips_and_updates</span> 정보 공유</li>
                 </ul>
             </div>
         </aside>
 
         <main class="main-content">
-            
             <article class="post-view-card">
-                
                 <div class="post-header">
                     <span class="category-label">{{ post.categoryName }}</span>
                     <h1 class="post-subject">{{ post.title }}</h1>
@@ -117,17 +140,14 @@ const toggleLike = () => {
                         <button class="btn-outline" @click="goList">목록으로</button>
                     </div>
                 </div>
-
             </article>
 
             <section class="comment-section">
                 <h3 class="cmt-header">댓글 <span class="cmt-count">4</span></h3>
-
                 <div class="cmt-input-box">
                     <textarea class="cmt-textarea" placeholder="따뜻한 댓글을 남겨주세요."></textarea>
                     <button class="btn-submit-cmt">등록</button>
                 </div>
-
                 <div class="cmt-list">
                     <div class="cmt-item">
                         <img src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="cmt-avatar">
@@ -142,26 +162,26 @@ const toggleLike = () => {
                     </div>
                 </div>
             </section>
-
         </main>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* 디자인 토큰 */
+/* 사이드바 스타일 (CommunityView 스타일 복사) */
+.profile-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #EEE; border: 3px solid #FFD54F; margin: 0 auto 12px; background-size: cover; background-position: center; cursor: pointer; }
+.user-activities { border-top: 1px dashed var(--line-border); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.activity-link { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-body); font-weight: 600; padding: 4px 8px; border-radius: 6px; transition: 0.2s; cursor: pointer; }
+.activity-link:hover { background: #FFFDE7; color: var(--primary-deep); }
+.activity-link .material-icons-round { font-size: 18px; color: #FFB300; }
+.btn-login { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
+
 .detail-page {
     --bg-base: #FDFCF8; --bg-white: #FFFFFF;
     --primary-honey: #FFD54F; --primary-deep: #FFC107; --accent-butter: #FFFDE7;
-    
-    /* ✅ 베이비 핑크 팔레트 (OOCSS Theme) */
-    --baby-pink-bg: #FFF0F3;
-    --baby-pink-border: #FFB7C5;
-    --baby-pink-text: #FF8C94;
-    
+    --baby-pink-bg: #FFF0F3; --baby-pink-border: #FFB7C5; --baby-pink-text: #FF8C94;
     --text-title: #4A3F35; --text-body: #5D5D5D; --text-light: #999999;
     --line-border: #EAEAEA; --radius-lg: 20px; --shadow-card: 0 4px 12px rgba(0,0,0,0.03);
-
     background-color: var(--bg-base); min-height: 100vh;
     color: var(--text-title); font-family: 'NanumSquareRound', sans-serif; padding-top: 40px;
 }
@@ -196,43 +216,20 @@ const toggleLike = () => {
 
 .post-actions { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--line-border); }
 
-/* ✅ [OOCSS - Object] 좋아요 버튼 기본 구조 */
 .btn-paw-like { 
     width: 90px; height: 90px; 
     border-radius: 50%; background: #FFFFFF; 
     border: 2px solid #EEEEEE; display: flex; flex-direction: column; 
     align-items: center; justify-content: center; cursor: pointer; 
-    color: #CCCCCC; /* 기본 회색 */
+    color: #CCCCCC; 
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
 }
+.btn-paw-like .material-icons-round { font-size: 40px; margin-bottom: 2px; }
+.btn-paw-like .like-count { font-weight: 800; font-size: 15px; color: inherit; }
+.btn-paw-like.active { border-color: var(--baby-pink-border); background: var(--baby-pink-bg); color: var(--baby-pink-text); transform: scale(1.1) rotate(-10deg); box-shadow: 0 8px 20px rgba(255, 140, 148, 0.15); }
+.btn-paw-like:hover:not(.active) { background: #F9F9F9; border-color: #E0E0E0; }
 
-.btn-paw-like .material-icons-round {
-    font-size: 40px;
-    margin-bottom: 2px;
-}
-
-.btn-paw-like .like-count {
-    font-weight: 800;
-    font-size: 15px;
-    color: inherit;
-}
-
-/* ✅ [OOCSS - State/Modifier] 활성화된 베이비 핑크 상태 */
-.btn-paw-like.active { 
-    border-color: var(--baby-pink-border); 
-    background: var(--baby-pink-bg); 
-    color: var(--baby-pink-text);
-    transform: scale(1.1) rotate(-10deg);
-    box-shadow: 0 8px 20px rgba(255, 140, 148, 0.15);
-}
-
-.btn-paw-like:hover:not(.active) {
-    background: #F9F9F9;
-    border-color: #E0E0E0;
-}
-
-/* 기타 UI 요소 보존 */
 .btn-group { display: flex; gap: 12px; width: 100%; justify-content: flex-end; margin-top: 10px; }
 .btn-outline { padding: 8px 16px; border: 1px solid var(--line-border); background: white; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-body); cursor: pointer; }
 .btn-outline:hover { background: #F9FAFB; color: var(--text-title); }

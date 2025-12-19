@@ -58,6 +58,10 @@ onMounted(() => {
         localStorage.setItem('community-posts', JSON.stringify(initialData));
     }
 
+    if (route.query.category) {
+        currentCategory.value = route.query.category;
+    }
+
     if (route.query.sort) {
         if (route.query.sort === 'popular') currentCategory.value = 'hot';
         else if (route.query.sort === 'latest') currentCategory.value = 'all';
@@ -242,18 +246,20 @@ const setCategory = (cat) => {
                         <td>운영자</td><td>10:00</td><td>521</td>
                     </tr>
                     
-                    <tr v-for="post in paginatedPosts" :key="post.id">
-                        <td>{{ post.id }}</td>
+
+                    <tr v-for="(post, index) in paginatedPosts" :key="post.id">
+                    <td>{{ filteredPosts.length - ((currentPage - 1) * itemsPerPage) - index }}</td>
+    
                         <td><span class="cat-badge">{{ post.categoryName }}</span></td>
                         <td class="td-title">
                             <div class="post-link" @click="router.push(`/community/post/${post.id}`)">
                                 <span class="post-subj">{{ post.title }}</span>
-                                <span class="new-badge" v-if="post.isNew">N</span>
+                                 <span class="new-badge" v-if="post.isNew">N</span>
                             </div>
                         </td>
-                        <td>{{ post.author }}</td>
-                        <td>{{ post.date }}</td>
-                        <td>{{ post.views }}</td>
+                    <td>{{ post.author }}</td>
+                    <td>{{ post.date }}</td>
+                    <td>{{ post.views }}</td>
                     </tr>
 
                     <tr v-if="paginatedPosts.length === 0">

@@ -101,7 +101,6 @@ const router = createRouter({
       name: 'license',
       component: LicensePage
     },
-    
 
 
 
