@@ -2,32 +2,51 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
+import api from '@/api';
 
 const router = useRouter();
 const userStore = useUserStore();
 
 const email = ref('');
 const password = ref('');
-// 🔥 [추가] 닉네임을 따로 입력받지 않으므로, 더미 닉네임을 사용하거나, 
-//    실제 백엔드에서는 로그인 시 닉네임을 같이 받아와야 합니다. 
-//    현재 로직을 단순화하여 이메일 앞부분을 닉네임으로 사용하고 있었습니다. 
-//    -> 여기서는 닉네임 입력 필드가 없으므로, 더미 닉네임을 수정합니다.
-const dummyNickname = '히히'; // 닉네임 입력 필드가 없어서 임시로 사용
 
-const handleLogin = () => {
+const handleLogin = async () => {
     if (!email.value || !password.value) {
         alert('이메일과 비밀번호를 모두 입력해주세요.');
         return;
     }
 
-    // Pinia 스토어에 로그인 요청
-    userStore.login({ 
-        username: email.value,
-        nickname: dummyNickname // 🔥 [수정] 스토어에 닉네임 전달
-    });
-    
-    alert(`로그인 성공! 환영합니다, ${userStore.user.nickname}님! 🐾`);
-    router.push('/'); // 홈으로 이동
+    try {
+        // Backend login request
+        const response = await api.post('users/login/', {
+            email: email.value,
+            password: password.value
+        });
+
+        const { access, refresh } = response.data;
+
+        // Save tokens
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
+
+        // Fetch user profile (assuming a profile endpoint exists)
+        const profileRes = await api.get('users/profile/', {
+            headers: { Authorization: `Bearer ${access}` }
+        });
+
+        // Update Pinia store with actual user data
+        userStore.login({ 
+            username: profileRes.data.username,
+            nickname: profileRes.data.username, // Using username as nickname as per UserDetailSerializer
+            profileImg: profileRes.data.profile_image
+        });
+
+        alert(`로그인 성공! 환영합니다, ${userStore.user.username}님! 🐾`);
+        router.push('/'); // Redirect to home
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+    }
 };
 </script>
 
@@ -69,9 +88,8 @@ const handleLogin = () => {
             <div class="divider"><span>또는 SNS로 시작하기</span></div>
 
             <div class="social-buttons">
-                <button class="social-btn" title="Google"><img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" class="social-icon"></button>
+                <button class="social-btn" title="Naver"><img src="/login-icon/NAVER_login_Light_KR_green_icon_H56.png" class="social-icon"></button>
                 <button class="social-btn" title="Kakao"><img src="https://cdn-icons-png.flaticon.com/512/3669/3669973.png" class="social-icon"></button>
-                <button class="social-btn" title="Apple"><img src="https://cdn-icons-png.flaticon.com/512/0/747.png" class="social-icon"></button>
             </div>
 
             <div class="bottom-link">

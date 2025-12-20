@@ -9,15 +9,10 @@ export const useUserStore = defineStore('user', () => {
   // 댕댕이 프로필 정보 (아기수첩 데이터)
   const petProfile = ref(null); 
 
-  // 2. 기능 (Actions)
-  
-  // 로그인
   const login = (userData) => {
     user.value = {
       username: userData.username,
-      nickname: userData.nickname,
-      password: userData.password, // 수정 기능을 위해 비번도 일단 저장 (데모용)
-      profileImg: 'https://images.unsplash.com/photo-1591769225440-811ad7d6eca6?auto=format&fit=crop&w=100&q=80'
+      profileImg: userData.profileImg || 'https://images.unsplash.com/photo-1591769225440-811ad7d6eca6?auto=format&fit=crop&w=100&q=80'
     };
     localStorage.setItem('user-info', JSON.stringify(user.value));
   };
