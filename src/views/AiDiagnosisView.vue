@@ -2,9 +2,12 @@
 import { ref, nextTick, onMounted } from 'vue'; // onMounted 추가
 import { useRouter, useRoute } from 'vue-router'; // useRoute 추가
 import DiagnosisCard from '@/components/DiagnosisCard.vue'; 
-
+import AISidebar from '@/components/AISidebar.vue';
+import { useUserStore } from '@/stores/user';
+import api from '@/api';
 const router = useRouter();
 const route = useRoute(); // ✅ [기능 추가] 현재 주소(데이터) 가져오기 위한 설정
+const userStore = useUserStore();
 const goHome = () => router.push('/');
 
 // 상태 변수
@@ -12,12 +15,8 @@ const messages = ref([]);
 const userInput = ref('');
 const isLoading = ref(false);
 const chatContentRef = ref(null);
-
-// 사이드바 기록
-const historyList = ref([
-    { id: 1, title: '슬개골 탈구 의심 증상', active: false },
-    { id: 2, title: '강아지 눈 충혈 분석', active: false },
-]);
+const currentSessionId = ref(null);
+const sidebarRef = ref(null);
 
 // ✅ [기능 추가] 페이지가 열릴 때 메인에서 보낸 데이터 확인
 onMounted(() => {
@@ -32,17 +31,29 @@ onMounted(() => {
 
 // ✅ [새로운 진단 시작] 버튼 기능
 const startNewChat = () => {
-    if (messages.value.length > 0) {
-        const firstMsg = messages.value.find(m => m.type === 'user');
-        const title = firstMsg ? firstMsg.text : '새로운 진단 기록';
-        historyList.value.unshift({ id: Date.now(), title: title, active: false });
-    }
     messages.value = [];
     userInput.value = '';
     isLoading.value = false;
+    currentSessionId.value = null;
     
     // URL의 쿼리도 지워주는 게 깔끔함 (선택사항)
     router.replace({ query: null });
+};
+
+const selectSession = async (sessionId) => {
+    try {
+        currentSessionId.value = sessionId;
+        const response = await api.get(`chats/${sessionId}/`);
+        // Assuming the response has messages in the detail view
+        // Adjust based on your actual ChatSessionDetailSerializer
+        messages.value = response.data.messages.map(m => ({
+            type: m.role === 'user' ? 'user' : 'ai',
+            text: m.content
+        }));
+        scrollToBottom();
+    } catch (error) {
+        console.error('Failed to load session:', error);
+    }
 };
 
 // 메시지 전송
@@ -57,7 +68,6 @@ const sendMessage = async () => {
     await fetchAiResponse(text);
 };
 
-// AI 응답 로직
 const fetchAiResponse = async (text) => {
     setTimeout(() => {
         if (text.includes("눈") || text.includes("충혈") || text.includes("아파") || text.includes("빨개")) {
@@ -101,28 +111,12 @@ const clickSuggestion = (text) => {
 
 <template>
   <div class="ai-container">
-    
-    <aside class="ai-sidebar">
-        <div class="sidebar-logo" @click="goHome">
-            <span class="material-icons-round logo-icon">pets</span>
-            <span class="logo-text">함께하개냥</span>
-        </div>
-        <div class="sidebar-header">
-            <div class="user-avatar"></div>
-            <span class="user-name">최두용님</span>
-        </div>
-
-        <button class="btn-new-chat" @click="startNewChat">
-            <span class="material-icons-round" style="color:var(--primary-honey)">add</span>
-            새로운 진단 시작
-        </button>
-
-        <ul class="history-list">
-            <li v-for="h in historyList" :key="h.id" class="history-item">
-                <span class="material-icons-round history-icon">history</span> {{ h.title }}
-            </li>
-        </ul>
-    </aside>
+    <AISidebar 
+        ref="sidebarRef"
+        :currentSessionId="currentSessionId" 
+        @select-session="selectSession"
+        @new-chat="startNewChat"
+    />
 
     <main class="chat-main">
         <div class="chat-header">함께하개냥 AI 닥터 <span class="ver-badge">Ver 2.0</span></div>
@@ -183,11 +177,6 @@ const clickSuggestion = (text) => {
 <style scoped>
 /* 기존 스타일 그대로 유지 */
 .ai-container { display: flex; height: 100vh; overflow: hidden; color: #333; }
-.ai-sidebar { width: 260px; background: #F9FAFB; padding: 20px; border-right: 1px solid #eee; display: flex; flex-direction: column; }
-.sidebar-logo { display: flex; align-items: center; gap: 6px; font-size: 20px; font-weight: 800; color: #4A3F35; margin-bottom: 30px; cursor: pointer; }
-.logo-icon { color: #FFD54F; font-size: 24px; }
-.btn-new-chat { width: 100%; padding: 12px; background: white; border: 1px solid #E5E7EB; border-radius: 12px; color: #111827; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; margin-bottom: 24px; }
-.btn-new-chat:hover { border-color: #FFD54F; background: #FFFDE7; }
 .chat-main { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
 .chat-content { flex: 1; overflow-y: auto; padding: 20px 40px 100px; }
 .msg-row { display: flex; margin-bottom: 20px; }
@@ -209,16 +198,8 @@ const clickSuggestion = (text) => {
 .sug-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;}
 .sug-desc { font-size: 13px; color: #6B7280; }
 
-/* 기타 스타일 생략 (필요시 기존 코드 사용) */
-.history-list { list-style: none; overflow-y: auto; flex: 1; }
-.history-item { padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.history-item:hover { background: #E5E7EB; color: #111827; }
 .chat-header { height: 60px; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; padding: 0 32px; font-weight: bold; }
 .ver-badge { font-size: 12px; background: #F3F4F6; padding: 4px 8px; border-radius: 6px; color: #666; margin-left: 6px; font-weight: normal; }
-.sidebar-header { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #E5E7EB; }
-.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #ddd; background-size: cover; background-image: url('https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80'); }
-.user-name { font-size: 14px; font-weight: 700; }
-.history-icon { font-size: 16px; color: #9CA3AF; }
 .btn-send { width: 40px; height: 40px; border-radius: 50%; background: #FFD54F; color: white; border: none; cursor: pointer; }
 .msg-bubble.loading span { display: inline-block; animation: bounce 1.4s infinite ease-in-out both; font-size: 20px; margin: 0 2px; }
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
