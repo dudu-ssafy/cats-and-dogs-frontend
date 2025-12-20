@@ -17,34 +17,18 @@ const handleLogin = async () => {
     }
 
     try {
-        // Backend login request
-        const response = await api.post('users/login/', {
+        await userStore.login({ 
             email: email.value,
             password: password.value
         });
 
-        const { access, refresh } = response.data;
-
-        // Save tokens
-        localStorage.setItem('access_token', access);
-        localStorage.setItem('refresh_token', refresh);
-
-        // Fetch user profile (assuming a profile endpoint exists)
-        const profileRes = await api.get('users/profile/', {
-            headers: { Authorization: `Bearer ${access}` }
-        });
-
-        // Update Pinia store with actual user data
-        userStore.login({ 
-            username: profileRes.data.username,
-            profileImg: profileRes.data.profile_image
-        });
-
         alert(`로그인 성공! 환영합니다, ${userStore.user.username}님! 🐾`);
-        router.push('/'); // Redirect to home
+        router.push('/');
     } catch (error) {
         console.error('Login error:', error);
         alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+        email.value = '';
+        password.value = '';
     }
 };
 </script>

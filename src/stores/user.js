@@ -1,5 +1,8 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import axios from 'axios'
+
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1/'
 
 export const useUserStore = defineStore('user', () => {
   // 1. 상태 (State)
@@ -9,12 +12,64 @@ export const useUserStore = defineStore('user', () => {
   // 댕댕이 프로필 정보 (아기수첩 데이터)
   const petProfile = ref(null); 
 
+  const signup = (userData) => {
+    const { username, email, password } = userData;
+    console.log(username, email, password);
+    axios({
+      method: 'post',
+      url: `${API_URL}users/signup/`,
+      data: {
+        username,
+        email,
+        password,
+      },
+    })
+      .then((response) => {
+      console.log(response.data);
+      return login({
+        email,
+        password,
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      throw error;
+    });
+  };
+
   const login = (userData) => {
-    user.value = {
-      username: userData.username,
-      profileImg: userData.profileImg || 'https://images.unsplash.com/photo-1591769225440-811ad7d6eca6?auto=format&fit=crop&w=100&q=80'
-    };
-    localStorage.setItem('user-info', JSON.stringify(user.value));
+    const { email, password } = userData;
+    axios({
+      method: 'post',
+      url: `${API_URL}users/login/`,
+      data: {
+        email,
+        password,
+      },
+    })
+    .then((response) => {
+      console.log(response.data); 
+      const { token, user: userData } = response.data;
+      
+      localStorage.setItem('access_token', token.access);
+      localStorage.setItem('refresh_token', token.refresh);
+      
+      // Update store state
+      user.value = {
+        id: userData.id,
+        username: userData.username,
+        profileImg: userData.profile_image,
+        access: token.access,
+        refresh: token.refresh
+      };
+
+      localStorage.setItem('user-info', JSON.stringify(user.value));
+      return response.data;
+    })
+    .catch((error) => {
+      console.error(error);
+      throw error;
+    });
   };
 
   // ✅ [추가됨] 내 정보 수정 (닉네임, 비밀번호 등 변경 시 사용)
@@ -67,6 +122,7 @@ export const useUserStore = defineStore('user', () => {
     logout, 
     initUser, 
     registerPet, 
-    updateUser // ✅ 수정 기능 사용을 위해 꼭 반환해야 함
+    updateUser, // ✅ 수정 기능 사용을 위해 꼭 반환해야 함
+    signup,
   }
 })
