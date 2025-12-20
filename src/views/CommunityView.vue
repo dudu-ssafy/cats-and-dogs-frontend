@@ -222,33 +222,35 @@ const setCategory = (cat) => {
                 </button>
             </div>
 
-            <table class="custom-table">
-                <colgroup>
-                    <col style="width: 60px;"><col style="width: 100px;"><col style="width: auto;"><col style="width: 120px;"><col style="width: 100px;"><col style="width: 70px;">
-                </colgroup>
-                <thead>
-                    <tr><th>번호</th><th>분류</th><th style="text-align:left; padding-left:24px;">제목</th><th>글쓴이</th><th>등록일</th><th>조회</th></tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(post, index) in paginatedPosts" :key="post.id">
-                        <td>{{ filteredPosts.length - ((currentPage - 1) * itemsPerPage) - index }}</td>
-                        <td><span class="cat-badge">{{ post.categoryName }}</span></td>
-                        <td class="td-title">
-                            <div class="post-link" @click="router.push(`/community/post/${post.id}`)">
-                                <span class="post-subj">{{ post.title }}</span>
-                                 <span class="new-badge" v-if="post.isNew">N</span>
-                            </div>
-                        </td>
-                        <td>{{ post.author }}</td>
-                        <td>{{ post.date }}</td>
-                        <td>{{ post.views }}</td>
-                    </tr>
+            <div class="table-wrapper">
+                <table class="custom-table">
+                    <colgroup>
+                        <col style="width: 60px;"><col style="width: 100px;"><col style="width: auto;"><col style="width: 120px;"><col style="width: 100px;"><col style="width: 70px;">
+                    </colgroup>
+                    <thead>
+                        <tr><th>번호</th><th>분류</th><th style="text-align:left; padding-left:24px;">제목</th><th>글쓴이</th><th>등록일</th><th>조회</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(post, index) in paginatedPosts" :key="post.id">
+                            <td>{{ filteredPosts.length - ((currentPage - 1) * itemsPerPage) - index }}</td>
+                            <td><span class="cat-badge">{{ post.categoryName }}</span></td>
+                            <td class="td-title">
+                                <div class="post-link" @click="router.push(`/community/post/${post.id}`)">
+                                    <span class="post-subj">{{ post.title }}</span>
+                                     <span class="new-badge" v-if="post.isNew">N</span>
+                                </div>
+                            </td>
+                            <td>{{ post.author }}</td>
+                            <td>{{ post.date }}</td>
+                            <td>{{ post.views }}</td>
+                        </tr>
 
-                    <tr v-if="paginatedPosts.length === 0">
-                        <td colspan="6" style="padding: 40px; color: #999;">등록된 게시글이 없습니다.</td>
-                    </tr>
-                </tbody>
-            </table>
+                        <tr v-if="paginatedPosts.length === 0">
+                            <td colspan="6" style="padding: 40px; color: #999;">등록된 게시글이 없습니다.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <div class="pagination-wrap" v-if="totalPages > 0">
                 <button class="page-btn" :class="{ disabled: currentPage === 1 }" @click="changePage(currentPage - 1)">
@@ -275,6 +277,7 @@ const setCategory = (cat) => {
 </template>
 
 <style scoped>
+/* 기존 스타일 그대로 유지 */
 .profile-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #EEE; border: 3px solid #FFD54F; margin: 0 auto 12px; background-size: cover; background-position: center; cursor: pointer; }
 .welcome-text { margin-bottom: 20px !important; }
 .btn-login { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
@@ -328,4 +331,25 @@ ul { list-style: none; padding: 0; margin: 0; }
 .page-btn.active { background: var(--primary-honey); color: white; font-weight: 800; box-shadow: 0 4px 10px rgba(255, 213, 79, 0.4); }
 .page-btn.disabled { color: #DDD; cursor: default; }
 .page-btn.disabled:hover { background: white; border-color: transparent; }
+
+/* ⬇️ 여기서부터 추가된 반응형 스타일 ⬇️ */
+
+/* 표가 화면을 뚫고 나가지 않게 해주는 보호막 */
+.table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 1024px) {
+    .container { padding: 0 20px; }
+    .layout-grid { flex-direction: column; gap: 20px; } /* 사이드바를 위로 올림 */
+    .sidebar { width: 100%; }
+    .menu-list { display: flex; flex-wrap: wrap; gap: 8px; } /* 메뉴를 가로로 배치 */
+    .menu-list li { flex: 1; min-width: 100px; justify-content: center; }
+    .login-card { margin-bottom: 16px; }
+}
+
+@media (max-width: 768px) {
+    .best-list-wrap { grid-template-columns: 1fr; } /* 인기글을 1줄로 */
+    .board-ttl { font-size: 18px; }
+    .custom-table th, .custom-table td { padding: 12px 8px; font-size: 13px; }
+    .post-subj { max-width: 180px; } /* 제목이 너무 길면 잘리게 */
+}
 </style>
