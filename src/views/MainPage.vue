@@ -46,7 +46,7 @@
           </div>
           <div class="ai-visual">
             <div class="scan-effect"></div>
-            <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800&auto=format&fit=crop" class="ai-img" alt="AI 진단 강아지">
+            <img src="@/assets/images/joh-eun-sonyeon-chiwawa-gang-ajiui-chosanghwa.jpg" class="ai-img" alt="AI 진단 강아지">
           </div>
         </section>
 
@@ -299,9 +299,9 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 
 /* 1. Hero Section */
 .hero-wrap {
-    position: relative; width: 100%; height: 100vh; overflow: hidden;
+    position: relative; width: 100%; height: 98vh; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    background-image: url('https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=2524&auto=format&fit=crop');
+    background-image: url('@/assets/images/puleun-jandieseo-jago-issneun-laebeulado-liteulibeo-gang-ajiui-geunjeob-chwal-yeong-syas.jpg');
     background-size: cover; background-position: center 30%; background-attachment: fixed;
 }
 .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5)); }
@@ -312,12 +312,12 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 }
 @keyframes fadeUp { to { transform: translateY(0); opacity: 1; } }
 .main-copy { font-size: 70px; line-height: 1.15; margin-bottom: 24px; }
-.sub-copy { font-size: 22px; margin-bottom: 40px; font-family: var(--font-body); font-weight: 700; }
+.sub-copy { font-size: 22px; margin-bottom: 40px; font-family: var(--font-body); font-weight: 700;  }
 .scroll-down {
-    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
     color: #fff; font-family: var(--font-title); font-size: 15px;
     animation: bounce 2s infinite; display: flex; flex-direction: column; align-items: center; gap: 8px;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
 }
 .mouse-icon { width: 28px; height: 44px; border: 2px solid #fff; border-radius: 50px; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 .mouse-wheel { width: 4px; height: 6px; background: #fff; border-radius: 50%; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); animation: wheel 2s infinite; }
