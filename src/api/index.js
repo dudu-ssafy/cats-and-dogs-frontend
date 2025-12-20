@@ -1,11 +1,19 @@
 import axios from 'axios';
-
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1/',
     headers: {
         'Content-Type': 'application/json',
     },
     timeout: 5000,
+});
+
+// FastAPI 전용 AI API 인스턴스 (Port 8001)
+const aiApi = axios.create({
+    baseURL: import.meta.env.VITE_AI_API_BASE_URL || 'http://localhost:8001/',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    timeout: 30000, // AI 분석은 시간이 걸릴 수 있어 타임아웃을 길게 설정
 });
 
 // Request Interceptor: 모든 요청에 Access Token 주입
@@ -59,4 +67,5 @@ api.interceptors.response.use(
     }
 );
 
+export { aiApi };
 export default api;
