@@ -23,7 +23,7 @@ const goWrite = () => {
     router.push('/community/write');
 };
 
-// ✅ 테스트를 위해 데이터 일부 수정 (author: '본인닉네임' 혹은 isLiked 추가)
+// ✅ 초기 데이터
 const initialData = [
     { id: 4224, category: 'qna', categoryName: '질문', title: '강아지가 산책 중 풀을 뜯어먹는데 괜찮나요?', author: '풀밭위의견', date: '15:10', views: 12, isNew: true, isLiked: true },
     { id: 4223, category: 'free', categoryName: '자유', title: '퇴근하고 집에 오니 휴지 파티가 열렸네요 ^^...', author: '해탈한집사', date: '14:55', views: 45, isNew: true, isLiked: false },
@@ -68,7 +68,7 @@ onMounted(() => {
     }
 });
 
-// ✅ 필터링 로직 수정 (내가 쓴 글 / 좋아요한 글 추가)
+// ✅ 필터링 로직
 const filteredPosts = computed(() => {
     let result = [];
     if (currentCategory.value === 'all') {
@@ -76,10 +76,8 @@ const filteredPosts = computed(() => {
     } else if (currentCategory.value === 'hot') {
         result = posts.value.filter(p => p.views >= 100).sort((a,b) => b.views - a.views);
     } else if (currentCategory.value === 'my-posts') {
-        // 내가 작성한 글: 현재 로그인한 유저 닉네임과 작성자 비교
         result = posts.value.filter(p => p.author === userStore.user?.nickname);
     } else if (currentCategory.value === 'liked-posts') {
-        // 내가 좋아요한 글: 데이터 내 isLiked가 true인 것만 (실제로는 API 연동 필요)
         result = posts.value.filter(p => p.isLiked === true);
     } else {
         result = posts.value.filter(p => p.category === currentCategory.value);
@@ -206,13 +204,6 @@ const setCategory = (cat) => {
                         </div>
                     </div>
                 </div>
-                <div class="notice-container">
-                    <div class="section-head"><span class="section-title" style="font-size:16px">공지사항</span></div>
-                    <div style="display:flex; flex-direction:column; gap:4px;">
-                        <div class="notice-row"><span class="material-icons-round notice-icon">campaign</span><span>커뮤니티 이용 수칙 안내 (필독)</span></div>
-                        <div class="notice-row"><span class="material-icons-round notice-icon">campaign</span><span>12월 펫페어 무료 티켓 이벤트!</span></div>
-                    </div>
-                </div>
             </div>
 
             <div class="board-head">
@@ -231,42 +222,35 @@ const setCategory = (cat) => {
                 </button>
             </div>
 
-            <table class="custom-table">
-                <colgroup>
-                    <col style="width: 60px;"><col style="width: 100px;"><col style="width: auto;"><col style="width: 120px;"><col style="width: 100px;"><col style="width: 70px;">
-                </colgroup>
-                <thead>
-                    <tr><th>번호</th><th>분류</th><th style="text-align:left; padding-left:24px;">제목</th><th>글쓴이</th><th>등록일</th><th>조회</th></tr>
-                </thead>
-                <tbody>
-                    <tr style="background-color:#FAFAFA;" v-if="currentCategory === 'all' && currentPage === 1">
-                        <td><span class="material-icons-round" style="font-size:16px; color:#FF5252">push_pin</span></td>
-                        <td><span class="cat-badge">공지</span></td>
-                        <td class="td-title"><div class="post-link"><span class="post-subj" style="font-weight:800">🐶 커뮤니티 클린 캠페인 안내</span></div></td>
-                        <td>운영자</td><td>10:00</td><td>521</td>
-                    </tr>
-                    
+            <div class="table-wrapper">
+                <table class="custom-table">
+                    <colgroup>
+                        <col style="width: 60px;"><col style="width: 100px;"><col style="width: auto;"><col style="width: 120px;"><col style="width: 100px;"><col style="width: 70px;">
+                    </colgroup>
+                    <thead>
+                        <tr><th>번호</th><th>분류</th><th style="text-align:left; padding-left:24px;">제목</th><th>글쓴이</th><th>등록일</th><th>조회</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(post, index) in paginatedPosts" :key="post.id">
+                            <td>{{ filteredPosts.length - ((currentPage - 1) * itemsPerPage) - index }}</td>
+                            <td><span class="cat-badge">{{ post.categoryName }}</span></td>
+                            <td class="td-title">
+                                <div class="post-link" @click="router.push(`/community/post/${post.id}`)">
+                                    <span class="post-subj">{{ post.title }}</span>
+                                     <span class="new-badge" v-if="post.isNew">N</span>
+                                </div>
+                            </td>
+                            <td>{{ post.author }}</td>
+                            <td>{{ post.date }}</td>
+                            <td>{{ post.views }}</td>
+                        </tr>
 
-                    <tr v-for="(post, index) in paginatedPosts" :key="post.id">
-                    <td>{{ filteredPosts.length - ((currentPage - 1) * itemsPerPage) - index }}</td>
-    
-                        <td><span class="cat-badge">{{ post.categoryName }}</span></td>
-                        <td class="td-title">
-                            <div class="post-link" @click="router.push(`/community/post/${post.id}`)">
-                                <span class="post-subj">{{ post.title }}</span>
-                                 <span class="new-badge" v-if="post.isNew">N</span>
-                            </div>
-                        </td>
-                    <td>{{ post.author }}</td>
-                    <td>{{ post.date }}</td>
-                    <td>{{ post.views }}</td>
-                    </tr>
-
-                    <tr v-if="paginatedPosts.length === 0">
-                        <td colspan="6" style="padding: 40px; color: #999;">등록된 게시글이 없습니다.</td>
-                    </tr>
-                </tbody>
-            </table>
+                        <tr v-if="paginatedPosts.length === 0">
+                            <td colspan="6" style="padding: 40px; color: #999;">등록된 게시글이 없습니다.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <div class="pagination-wrap" v-if="totalPages > 0">
                 <button class="page-btn" :class="{ disabled: currentPage === 1 }" @click="changePage(currentPage - 1)">
@@ -293,16 +277,11 @@ const setCategory = (cat) => {
 </template>
 
 <style scoped>
-/* OOCSS 기반 피드백: 
-   .activity-link와 .menu-list li는 공통적인 '네비게이션 아이템'의 구조를 가집니다.
-   이들을 .c-nav-item 같은 객체로 정의하면 중복 코드를 줄일 수 있습니다.
-*/
-
+/* 기존 스타일 그대로 유지 */
 .profile-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #EEE; border: 3px solid #FFD54F; margin: 0 auto 12px; background-size: cover; background-position: center; cursor: pointer; }
 .welcome-text { margin-bottom: 20px !important; }
 .btn-login { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
 .btn-login:hover { background: var(--primary-deep); }
-.btn-write-card, .btn-logout { display: none; } 
 .user-activities { border-top: 1px dashed var(--line-border); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .activity-link { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-body); font-weight: 600; padding: 4px 8px; border-radius: 6px; transition: 0.2s; cursor: pointer; }
 .activity-link:hover, .activity-link.active { background: #FFFDE7; color: var(--primary-deep); }
@@ -333,9 +312,6 @@ ul { list-style: none; padding: 0; margin: 0; }
 .rank-no.top { color: var(--primary-deep); } 
 .best-txt { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-body); }
 .cmt-cnt { color: #FF5252; font-size: 12px; font-weight: 700; }
-.notice-container { flex: 1; background: white; border: 1px solid var(--line-border); border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-.notice-row { display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid #FAFAFA; font-size: 13px; cursor: pointer; line-height: 1.4; color: var(--text-body); }
-.notice-icon { color: var(--primary-honey); font-size: 16px; flex-shrink: 0; }
 .board-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .board-ttl { font-size: 22px; font-weight: 900; color: var(--text-title); }
 .btn-write { background: var(--primary-honey); color: white; padding: 10px 20px; border-radius: 100px; font-weight: 800; font-size: 14px; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s; box-shadow: 0 4px 10px rgba(255, 213, 79, 0.3); }
@@ -347,7 +323,6 @@ ul { list-style: none; padding: 0; margin: 0; }
 .td-title { text-align: left !important; padding-left: 24px !important; }
 .post-link { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .post-subj { font-weight: 600; color: var(--text-title); max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.img-icon { font-size: 14px; color: #CCC; }
 .new-badge { font-size: 10px; font-weight: 800; color: var(--primary-deep); background: var(--accent-butter); padding: 2px 6px; border-radius: 4px; }
 .cat-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; background: #F3F4F6; color: #666; display: inline-block; }
 .pagination-wrap { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 40px; }
@@ -356,4 +331,25 @@ ul { list-style: none; padding: 0; margin: 0; }
 .page-btn.active { background: var(--primary-honey); color: white; font-weight: 800; box-shadow: 0 4px 10px rgba(255, 213, 79, 0.4); }
 .page-btn.disabled { color: #DDD; cursor: default; }
 .page-btn.disabled:hover { background: white; border-color: transparent; }
+
+/* ⬇️ 여기서부터 추가된 반응형 스타일 ⬇️ */
+
+/* 표가 화면을 뚫고 나가지 않게 해주는 보호막 */
+.table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 1024px) {
+    .container { padding: 0 20px; }
+    .layout-grid { flex-direction: column; gap: 20px; } /* 사이드바를 위로 올림 */
+    .sidebar { width: 100%; }
+    .menu-list { display: flex; flex-wrap: wrap; gap: 8px; } /* 메뉴를 가로로 배치 */
+    .menu-list li { flex: 1; min-width: 100px; justify-content: center; }
+    .login-card { margin-bottom: 16px; }
+}
+
+@media (max-width: 768px) {
+    .best-list-wrap { grid-template-columns: 1fr; } /* 인기글을 1줄로 */
+    .board-ttl { font-size: 18px; }
+    .custom-table th, .custom-table td { padding: 12px 8px; font-size: 13px; }
+    .post-subj { max-width: 180px; } /* 제목이 너무 길면 잘리게 */
+}
 </style>
