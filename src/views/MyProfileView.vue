@@ -9,6 +9,9 @@ const userStore = useUserStore();
 // UI 상태 관리 (0: 선택, 1: 입력, 2: 상세 프로필, 3: 정보 수정)
 const step = ref(0);
 
+// 사진 업로드를 위한 ref
+const fileInputRef = ref(null);
+
 // 팔로우 데이터
 const followerCount = ref(128);
 const followingCount = ref(95);
@@ -25,7 +28,7 @@ const followListData = ref([
     { id: 4, nickname: '초코주인', img: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=100', bio: '강아지는 사랑입니다 🐶' },
 ]);
 
-// ✅ 반려동물 커뮤니티 컨셉에 맞춘 숏츠 데이터 수정
+// 반려동물 커뮤니티 컨셉에 맞춘 숏츠 데이터
 const likedShorts = ref([
     { id: 1, title: '솜사탕 같은 포메라니안 산책 🐾', thumbnail: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400', views: '1.5만회' },
     { id: 2, title: '고양이 꾹꾹이 ASMR 🐱', thumbnail: 'https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?w=400', views: '8.2천회' },
@@ -36,7 +39,7 @@ const likedShorts = ref([
 
 // 숏츠 스크롤 제어 로직
 const shortsScrollRef = ref(null);
-const itemStep = 155; // 아이템 너비 + 간격
+const itemStep = 155; 
 
 const scrollNext = () => {
     if (shortsScrollRef.value) {
@@ -127,6 +130,29 @@ const openEditMode = () => {
     step.value = 3; 
 };
 
+// 사진 변경 로직
+const triggerFileUpload = () => {
+    fileInputRef.value.click();
+};
+
+const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const newImgUrl = e.target.result;
+            // 로컬 상태 업데이트
+            form.value.petImgUrl = newImgUrl;
+            // 스토어 업데이트 (이미 생성된 프로필에 반영)
+            userStore.registerPet({
+                ...userStore.petProfile,
+                petImgUrl: newImgUrl
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
 const openFollowModal = (type) => {
     followModalType.value = type;
     showFollowModal.value = true;
@@ -192,7 +218,7 @@ const goRegistration = () => router.push('/my-page/license');
                     <div class="input-wrap"><label>몸무게(kg)</label><input v-model="form.weight" type="text"></div>
                 </div>
                 <div class="input-wrap"><label>주소</label><input v-model="form.address" type="text"></div>
-                <div class="input-wrap"><label>한줄 소개</label><textarea v-model="form.description" rows="2"></textarea></div>
+                <div class="input-wrap"><label>한줄 소개</label><textarea v-model="form.description" rows="2" class="u-textarea"></textarea></div>
                 <button class="action-btn" @click="savePetInfo">등록 완료 ✨</button>
             </div>
         </section>
@@ -208,6 +234,12 @@ const goRegistration = () => router.push('/my-page/license');
             <div class="card profile-card">
                 <div class="img-wrapper">
                     <img :src="myPet.petImgUrl" alt="프로필">
+                    
+                    <input type="file" ref="fileInputRef" style="display: none" accept="image/*" @change="handleFileChange">
+                    <button class="c-camera-btn" @click="triggerFileUpload">
+                        <span class="material-icons-round">photo_camera</span>
+                    </button>
+
                     <div v-if="myPet && !myPet.isFutureOwner" class="badge-btn" @click="goRegistration">
                         📄 동물등록증
                     </div>
@@ -291,13 +323,27 @@ const goRegistration = () => router.push('/my-page/license');
                     <div class="input-wrap"><label>아이디</label><input v-model="userForm.username" type="text"></div>
                     <div class="input-wrap"><label>비밀번호</label><input v-model="userForm.password" type="password"></div>
                 </div>
+
                 <h3 class="sub-title" style="margin-top:20px;">🐶 댕댕이 정보</h3>
                 <div class="row">
                     <div class="input-wrap"><label>이름</label><input v-model="form.petName" type="text"></div>
                     <div class="input-wrap"><label>보호자</label><input v-model="form.ownerName" type="text"></div>
                 </div>
+                <div class="row">
+                    <div class="input-wrap"><label>생년월일</label><input v-model="form.birthdate" type="text"></div>
+                    <div class="input-wrap"><label>성별</label><select v-model="form.gender"><option>수컷</option><option>암컷</option></select></div>
+                </div>
+                <div class="row">
+                    <div class="input-wrap"><label>품종</label><input v-model="form.breed" type="text"></div>
+                    <div class="input-wrap"><label>중성화</label><select v-model="form.neutered"><option>완료</option><option>미완료</option></select></div>
+                </div>
+                <div class="row">
+                    <div class="input-wrap"><label>연락처</label><input v-model="form.contact" type="text"></div>
+                    <div class="input-wrap"><label>몸무게(kg)</label><input v-model="form.weight" type="text"></div>
+                </div>
                 <div class="input-wrap"><label>주소</label><input v-model="form.address" type="text"></div>
                 <div class="input-wrap"><label>한줄 소개</label><textarea v-model="form.description" rows="2" class="u-textarea"></textarea></div>
+                
                 <button class="action-btn" @click="updateAllInfo" style="background: #3E2723; color: white;">수정 완료 ✅</button>
             </div>
         </section>
@@ -350,7 +396,7 @@ const goRegistration = () => router.push('/my-page/license');
 .stat-link .value { color: #3E2723; font-weight: 800; }
 .v-divider { width: 1px; height: 12px; background: #E0E0E0; }
 
-/* --- 폼 관련 스타일 --- */
+/* --- 폼 스타일 --- */
 .input-wrap { margin-bottom: 16px; text-align: left; }
 .input-wrap label { display: block; font-weight: 700; font-size: 14px; color: #5D4037; margin-bottom: 6px; }
 .input-wrap input, .input-wrap select { width: 100%; padding: 12px; border: 2px solid #EEE; border-radius: 12px; font-size: 15px; background: #FAFAFA; box-sizing: border-box; }
@@ -358,7 +404,7 @@ const goRegistration = () => router.push('/my-page/license');
 .row { display: flex; gap: 10px; }
 .row .input-wrap { flex: 1; }
 
-/* --- 버튼 및 인터랙션 --- */
+/* --- 버튼 인터랙션 --- */
 .action-btn { width: 100%; padding: 16px; background: #3E2723; color: white; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
 .back-btn { background: none; border: none; font-weight: 700; color: #888; cursor: pointer; margin-bottom: 10px; }
 .back-text-btn { background: none; border: none; font-size: 16px; font-weight: 700; color: #8D6E63; cursor: pointer; }
@@ -366,9 +412,23 @@ const goRegistration = () => router.push('/my-page/license');
 
 /* --- 상세 프로필 컴포넌트 --- */
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+/* [OOCSS] c-camera-btn 스킨 및 배치 */
 .img-wrapper { position: relative; width: 120px; height: 120px; margin: 0 auto 20px; }
 .img-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-.badge-btn { position: absolute; bottom: 0; right: -10px; background: white; border: 2px solid #E3F2FD; color: #1976D2; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; z-index: 99; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+.c-camera-btn { 
+    position: absolute; bottom: 5px; right: 5px; 
+    width: 34px; height: 34px; border-radius: 50%; 
+    background: #3E2723; color: white; 
+    border: 3px solid white; display: flex; 
+    align-items: center; justify-content: center; 
+    cursor: pointer; z-index: 10;
+    transition: transform 0.2s;
+}
+.c-camera-btn:hover { transform: scale(1.1); }
+.c-camera-btn .material-icons-round { font-size: 18px; }
+
+.badge-btn { position: absolute; top: 0; right: -20px; background: white; border: 2px solid #E3F2FD; color: #1976D2; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; z-index: 9; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
 .info-text { text-align: center; }
 .sub-badge { background: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; }
 .desc { font-size: 15px; color: #6D4C41; margin-bottom: 15px; }
@@ -379,18 +439,18 @@ const goRegistration = () => router.push('/my-page/license');
 .divider { width: 1px; background: #EEE; }
 .sub-title { font-family: 'Jua'; font-size: 18px; color: #FFB300; margin-bottom: 15px; border-bottom: 2px solid #FFF8E1; padding-bottom: 5px; text-align: left; }
 
-/* --- [OOCSS] c-shorts-header (타이틀 디자인 수정) --- */
+/* --- [OOCSS] c-shorts-header --- */
 .c-shorts-header { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #FFF8E1; }
 .c-shorts-header .title { font-family: 'Jua'; font-size: 20px; color: #5D4037; display: flex; align-items: center; gap: 8px; }
 
-/* --- [OOCSS] c-shorts-wrapper (구조) --- */
+/* --- [OOCSS] c-shorts-wrapper --- */
 .c-shorts-wrapper { position: relative; width: 100%; }
 .c-shorts-container { width: 100%; overflow-x: auto; display: flex; padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .c-shorts-container::-webkit-scrollbar { display: none; }
 .c-shorts-list { display: flex; gap: 10px; padding: 0 5px; }
 .is-snapped { scroll-snap-type: x mandatory; }
 
-/* --- [OOCSS] c-nav-arrow (화살표 스킨) --- */
+/* --- [OOCSS] c-nav-arrow --- */
 .c-nav-arrow { position: absolute; top: 40%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; background: white; border: 2px solid #FFF8E1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.3s ease; }
 .c-nav-arrow:hover { background: #FFF8E1; transform: translateY(-50%) scale(1.1); color: #FFB300; }
 .c-nav-arrow .material-icons-round { font-size: 28px; }
@@ -403,7 +463,6 @@ const goRegistration = () => router.push('/my-page/license');
 .play-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
 .c-shorts-item:hover .play-overlay { opacity: 1; }
 .play-overlay .material-icons-round { color: white; font-size: 36px; }
-
 .c-shorts-item__info { padding-right: 18px; }
 .c-shorts-item__info .title { font-size: 13px; font-weight: 700; color: #0F0F0F; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 2px; }
 .c-shorts-item__info .meta { font-size: 12px; color: #606060; }
@@ -415,6 +474,19 @@ const goRegistration = () => router.push('/my-page/license');
 .is-secondary { background-color: #F5F5F5; border-color: #E0E0E0; }
 .c-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
 .c-modal-window { background: white; width: 100%; max-width: 400px; border-radius: 28px; overflow: hidden; animation: fadeUp 0.4s ease-out; }
+
+/* --- 모달 내부 유저 리스트 --- */
+.c-modal-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #EEE; }
+.c-modal-header .title { font-family: 'Jua'; font-size: 20px; color: #3E2723; margin: 0; }
+.c-modal-header .close-btn { background: none; border: none; cursor: pointer; color: #999; }
+.c-modal-body { padding: 10px 20px; max-height: 400px; overflow-y: auto; }
+.c-user-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #F5F5F5; }
+.c-user-item:last-child { border-bottom: none; }
+.c-user-item__avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; margin-right: 15px; }
+.c-user-item__info { flex: 1; text-align: left; }
+.c-user-item__info .name { font-weight: 700; font-size: 15px; color: #3E2723; }
+.c-user-item__info .bio { font-size: 12px; color: #8D6E63; }
+.c-user-item__btn { background: #FFF8E1; border: 1px solid #FFE082; color: #E65100; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
 
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>

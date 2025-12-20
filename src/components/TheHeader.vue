@@ -81,10 +81,10 @@ const goToProfileOrLogin = () => {
         </template>
         
         <template v-else>
-            <button class="c-btn-logout u-fw-bold" @click="userStore.logout">로그아웃</button>
             <button class="c-btn-icon" @click="goToProfileOrLogin">
                 <span class="material-icons-round">person</span>
             </button>
+            <button class="c-btn c-btn--primary-round u-fw-bold" @click="userStore.logout">로그아웃</button>
         </template>
       </div>
     </div>
@@ -145,7 +145,7 @@ const goToProfileOrLogin = () => {
     gap: clamp(12px, 3.5vw, 45px); 
 }
 .l-header-right { 
-    gap: clamp(8px, 1.5vw, 18px); 
+    gap: clamp(8px, 1.5vw, 12px); /* 간격을 살짝 조정했습니다 */
     flex-shrink: 0; 
 }
 
@@ -166,14 +166,14 @@ const goToProfileOrLogin = () => {
   transition: transform 0.3s ease;
 }
 
-/* ✅ 검색 오버레이 개선 (OOCSS) */
+/* 검색 오버레이 */
 .c-search-overlay {
     position: fixed; inset: 0;
-    background: rgba(0, 0, 0, 0.15); /* 배경 투명도 낮춤 */
-    backdrop-filter: blur(3px);     /* 블러 효과 약하게 */
+    background: rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(3px);
     z-index: 9999;
-    align-items: flex-start;        /* 수직 정렬을 상단으로 변경 */
-    padding-top: 12vh;              /* 상단에서부터의 거리 확보 */
+    align-items: flex-start;
+    padding-top: 12vh;
 }
 
 .c-search-modal {
@@ -183,7 +183,7 @@ const goToProfileOrLogin = () => {
     border-radius: 32px;
     padding: 40px;
     position: relative;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.12); /* 그림자도 더 부드럽게 */
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
     transform: translateY(0);
     transition: transform 0.3s ease;
 }
@@ -211,7 +211,6 @@ const goToProfileOrLogin = () => {
 
 .c-search-modal__hint { font-size: 14px; color: #999; text-align: left; }
 
-/* 기존 스타일들 유지 */
 .is-ai-mode { position: fixed; transform: translateY(-100%); }
 .is-visible { transform: translateY(0); }
 .hover-trigger { position: fixed; top: 0; width: 100%; height: 20px; z-index: 2000; }
@@ -243,19 +242,27 @@ const goToProfileOrLogin = () => {
     display: flex; align-items: center; justify-content: center;
 }
 
-.c-btn { border: none; outline: none; cursor: pointer; text-decoration: none; white-space: nowrap; background: none; }
+/* 버튼 관련 OOCSS */
+.c-btn { border: none; outline: none; cursor: pointer; text-decoration: none; white-space: nowrap; background: none; display: inline-flex; align-items: center; justify-content: center; }
 .c-btn--primary-round {
     background: var(--h-primary); color: #4A3F35; 
-    padding: clamp(6px, 1vw, 8px) clamp(12px, 1.5vw, 18px); border-radius: 20px; font-size: clamp(13px, 1.4vw, 16px);
+    padding: clamp(6px, 1vw, 8px) clamp(12px, 1.5vw, 18px); border-radius: 20px; 
+    font-size: clamp(13px, 1.4vw, 16px);
+    transition: background 0.2s ease;
 }
+.c-btn--primary-round:hover {
+    background: var(--h-accent);
+}
+
 .c-btn-icon {
     width: clamp(34px, 4vw, 40px); height: clamp(34px, 4vw, 40px);
     border-radius: 50%; background: var(--h-primary);
     display: flex; align-items: center; justify-content: center; 
     flex-shrink: 0; border: none; outline: none; cursor: pointer;
+    color: #4A3F35;
+    transition: transform 0.2s ease;
 }
-.c-btn-logout { background: none; border: none; outline: none; color: #999; font-size: clamp(13px, 1.4vw, 16px); cursor: pointer; padding: 0; }
-.c-btn-logout:hover { color: #FF5252; }
+.c-btn-icon:hover { transform: scale(1.05); }
 
 /* --- 3. Utilities & Animations --- */
 .u-fw-bold { font-weight: 700; }
