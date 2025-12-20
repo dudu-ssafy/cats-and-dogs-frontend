@@ -37,7 +37,6 @@ const handleLogin = async () => {
         // Update Pinia store with actual user data
         userStore.login({ 
             username: profileRes.data.username,
-            nickname: profileRes.data.username, // Using username as nickname as per UserDetailSerializer
             profileImg: profileRes.data.profile_image
         });
 
