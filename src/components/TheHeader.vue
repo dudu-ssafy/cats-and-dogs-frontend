@@ -15,6 +15,18 @@ const showCartIcon = computed(() => route.path.includes('/shop'));
 const isHeaderVisible = ref(false);
 const isPop = ref(false);
 
+// ✅ 추가된 검색 상태 및 로직
+const isSearchOpen = ref(false);
+const globalSearchQuery = ref('');
+
+const goToSearchPage = () => {
+    if (globalSearchQuery.value.trim()) {
+        router.push({ path: '/search', query: { q: globalSearchQuery.value } });
+        isSearchOpen.value = false;
+        globalSearchQuery.value = '';
+    }
+};
+
 onMounted(() => { userStore.initUser(); });
 
 watch(() => store.cartCount, () => {
@@ -53,6 +65,10 @@ const goToProfileOrLogin = () => {
       </nav>
 
       <div class="l-header-right o-flex-center">
+        <button class="c-btn-icon" @click="isSearchOpen = true">
+            <span class="material-icons-round">search</span>
+        </button>
+
         <router-link to="/cart" class="c-cart-btn" v-if="userStore.isLogin && showCartIcon">
             <span class="material-icons-round c-cart-btn__icon">shopping_cart</span>
             <span class="c-badge u-animate-pop" v-if="store.cartCount > 0" :class="{ 'is-active': isPop }">
@@ -73,13 +89,42 @@ const goToProfileOrLogin = () => {
       </div>
     </div>
   </header>
+
+  <transition name="fade">
+    <div v-if="isSearchOpen" class="c-search-overlay o-flex-center" @click.self="isSearchOpen = false">
+      <div class="c-search-modal">
+        <button class="c-search-modal__close" @click="isSearchOpen = false">
+            <span class="material-icons-round">close</span>
+        </button>
+        
+        <div class="c-search-modal__body">
+            <div class="c-search-field">
+            <input 
+                type="text" 
+                class="c-search-field__input" 
+                placeholder="어떤 정보를 찾으시나요?" 
+                v-model="globalSearchQuery" 
+                @keyup.enter="goToSearchPage"
+                autofocus
+            />
+            <button class="c-search-field__btn" @click="goToSearchPage">
+                <span class="material-icons-round">search</span>
+            </button>
+            </div>
+            <div class="c-search-modal__hint">
+            추천 키워드: <span class="u-color-primary">#말티즈 #슬개골탈구 #추천사료</span>
+            </div>
+        </div>
+      </div>
+    </div>
+  </transition>
 </template>
 
 <style scoped>
 /* ============================================================
    1. Objects (Layout: l-, o-)
    ============================================================ */
-.o-flex-center { display: flex; align-items: center; }
+.o-flex-center { display: flex; align-items: center; justify-content: center; }
 .l-container { 
     max-width: 1200px; 
     margin: 0 auto; 
@@ -121,30 +166,64 @@ const goToProfileOrLogin = () => {
   transition: transform 0.3s ease;
 }
 
+/* ✅ 검색 오버레이 개선 (OOCSS) */
+.c-search-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.15); /* 배경 투명도 낮춤 */
+    backdrop-filter: blur(3px);     /* 블러 효과 약하게 */
+    z-index: 9999;
+    align-items: flex-start;        /* 수직 정렬을 상단으로 변경 */
+    padding-top: 12vh;              /* 상단에서부터의 거리 확보 */
+}
+
+.c-search-modal {
+    background: white;
+    width: 90%;
+    max-width: 700px;
+    border-radius: 32px;
+    padding: 40px;
+    position: relative;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12); /* 그림자도 더 부드럽게 */
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+}
+
+.c-search-modal__close {
+    position: absolute; top: 20px; right: 24px;
+    background: none; border: none; cursor: pointer;
+    color: #CCC; font-size: 24px;
+}
+.c-search-modal__close:hover { color: #4A3F35; }
+
+.c-search-field {
+    display: flex; align-items: center;
+    border-bottom: 3px solid #FFD54F;
+    padding: 8px 0; margin-bottom: 20px;
+}
+.c-search-field__input {
+    flex: 1; background: none; border: none; outline: none;
+    font-size: clamp(18px, 2.5vw, 24px); 
+    font-family: 'NanumSquareRound', sans-serif;
+    font-weight: 700; color: #4A3F35;
+}
+.c-search-field__btn { background: none; border: none; cursor: pointer; color: #FFD54F; }
+.c-search-field__btn span { font-size: 32px; }
+
+.c-search-modal__hint { font-size: 14px; color: #999; text-align: left; }
+
+/* 기존 스타일들 유지 */
 .is-ai-mode { position: fixed; transform: translateY(-100%); }
 .is-visible { transform: translateY(0); }
 .hover-trigger { position: fixed; top: 0; width: 100%; height: 20px; z-index: 2000; }
 
-.c-logo { 
-    text-decoration: none; 
-    color: #4A3F35; 
-    gap: 8px; 
-    flex-shrink: 0; 
-}
+.c-logo { text-decoration: none; color: #4A3F35; gap: 8px; flex-shrink: 0; }
 .c-logo__icon { color: var(--h-primary); font-size: clamp(24px, 3vw, 32px); }
-.c-logo__text { 
-    font-size: clamp(18px, 2.5vw, 28px); 
-    white-space: nowrap; 
-}
+.c-logo__text { font-size: clamp(18px, 2.5vw, 28px); white-space: nowrap; }
 .c-logo__highlight { color: var(--h-primary); }
 
 .c-nav-item { 
-    font-size: clamp(14px, 1.8vw, 20px); 
-    color: #4A3F35; 
-    text-decoration: none; 
-    padding: 8px 0; 
-    position: relative; 
-    white-space: nowrap; 
+    font-size: clamp(14px, 1.8vw, 20px); color: #4A3F35; 
+    text-decoration: none; padding: 8px 0; position: relative; white-space: nowrap; 
 }
 .router-link-active.c-nav-item::after { 
     content: ''; position: absolute; bottom: -4px; left: 50%; 
@@ -164,44 +243,32 @@ const goToProfileOrLogin = () => {
     display: flex; align-items: center; justify-content: center;
 }
 
-/* --- 공통 버튼 스타일 (선 제거 핵심) --- */
-.c-btn { 
-    border: none; 
-    outline: none;     /* 클릭 시 검은 선 방지 */
-    cursor: pointer; 
-    text-decoration: none; 
-    white-space: nowrap; 
-    background: none;
-}
-
+.c-btn { border: none; outline: none; cursor: pointer; text-decoration: none; white-space: nowrap; background: none; }
 .c-btn--primary-round {
     background: var(--h-primary); color: #4A3F35; 
-    padding: clamp(6px, 1vw, 8px) clamp(12px, 1.5vw, 18px); 
-    border-radius: 20px; font-size: clamp(13px, 1.4vw, 16px);
+    padding: clamp(6px, 1vw, 8px) clamp(12px, 1.5vw, 18px); border-radius: 20px; font-size: clamp(13px, 1.4vw, 16px);
 }
-
 .c-btn-icon {
     width: clamp(34px, 4vw, 40px); height: clamp(34px, 4vw, 40px);
     border-radius: 50%; background: var(--h-primary);
     display: flex; align-items: center; justify-content: center; 
-    flex-shrink: 0;
-    border: none;      /* 선 제거 */
-    outline: none;     /* 선 제거 */
+    flex-shrink: 0; border: none; outline: none; cursor: pointer;
 }
-
-.c-btn-logout { 
-    background: none; 
-    border: none;      /* 선 제거 */
-    outline: none;     /* 선 제거 */
-    color: #999; 
-    font-size: clamp(13px, 1.4vw, 16px);
-    cursor: pointer;
-    padding: 0;
-}
+.c-btn-logout { background: none; border: none; outline: none; color: #999; font-size: clamp(13px, 1.4vw, 16px); cursor: pointer; padding: 0; }
 .c-btn-logout:hover { color: #FF5252; }
 
 /* --- 3. Utilities & Animations --- */
 .u-fw-bold { font-weight: 700; }
+.u-color-primary { color: #FFB300; font-weight: 800; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-active .c-search-modal { animation: slideIn 0.3s ease-out; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+@keyframes slideIn {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
 @keyframes pop {
     0% { transform: scale(1); }
     50% { transform: scale(1.4); }

@@ -101,6 +101,11 @@ const router = createRouter({
       name: 'license',
       component: LicensePage
     },
+    {
+      path: '/search',
+      name: 'Search',
+      component: () => import('@/views/Search.vue')
+    }
 
 
 
