@@ -1,8 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1/'
+import api from '@/api'
 
 export const useUserStore = defineStore('user', () => {
   // 1. 상태 (State)
@@ -14,10 +12,9 @@ export const useUserStore = defineStore('user', () => {
 
   const signup = (userData) => {
     const { username, email, password } = userData;
-    console.log(username, email, password);
-    axios({
+    return api({
       method: 'post',
-      url: `${API_URL}users/signup/`,
+      url: 'users/signup/',
       data: {
         username,
         email,
@@ -32,16 +29,16 @@ export const useUserStore = defineStore('user', () => {
       });
     })
     .catch((error) => {
-      console.error(error);
+      console.error(error.response.data);
       throw error;
     });
   };
 
   const login = (userData) => {
     const { email, password } = userData;
-    axios({
+    return api({
       method: 'post',
-      url: `${API_URL}users/login/`,
+      url: 'users/login/',
       data: {
         email,
         password,
@@ -95,8 +92,8 @@ export const useUserStore = defineStore('user', () => {
     
     localStorage.removeItem('user-info');
     localStorage.removeItem('pet-info'); 
-    
-    location.reload(); 
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
   };
 
   // 새로고침 시 정보 복구

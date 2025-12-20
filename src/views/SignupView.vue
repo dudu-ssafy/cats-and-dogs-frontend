@@ -24,8 +24,8 @@ const handleSignup = async () => {
         alert(`반가워요, ${username.value}님! 회원가입이 완료되었습니다. 🐾`);
         router.push('/'); 
     } catch (error) {
-        console.error('Signup error:', error);
-        const errorMsg = error.response?.data;
+        console.error('Signup error:', error.response.data['email']);
+        const errorMsg = error.response?.data['email'];
         alert(`회원가입 실패:\n${errorMsg}`);
     }
 };
