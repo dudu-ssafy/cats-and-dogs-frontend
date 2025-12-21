@@ -76,7 +76,7 @@ const filteredPosts = computed(() => {
     } else if (currentCategory.value === 'hot') {
         result = posts.value.filter(p => p.views >= 100).sort((a,b) => b.views - a.views);
     } else if (currentCategory.value === 'my-posts') {
-        result = posts.value.filter(p => p.author === userStore.user?.nickname);
+        result = posts.value.filter(p => p.author === userStore.user?.username);
     } else if (currentCategory.value === 'liked-posts') {
         result = posts.value.filter(p => p.isLiked === true);
     } else {
@@ -121,7 +121,7 @@ const setCategory = (cat) => {
                     ></div>
                     <p class="login-msg welcome-text">
                         <span style="font-size: 20px;">👋</span> 반가워요!<br>
-                        <span style="color:#F57F17; font-weight:800">{{ userStore.user.nickname }}</span>님 🐾
+                        <span style="color:#F57F17; font-weight:800">{{ userStore.user.username }}</span>님 🐾
                     </p>
                     
                     <div class="user-activities">
@@ -152,7 +152,7 @@ const setCategory = (cat) => {
             <div class="menu-group">
                 <div class="menu-head">
                     <span v-if="userStore.isLogin && userStore.user">
-                        {{ userStore.user.nickname }}님의 게시판
+                        {{ userStore.user.username }}님의 게시판
                     </span>
                     <span v-else>
                         게시판
