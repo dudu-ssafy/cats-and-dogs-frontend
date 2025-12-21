@@ -65,16 +65,16 @@ const goToProfileOrLogin = () => {
       </nav>
 
       <div class="l-header-right o-flex-center">
-        <button class="c-btn-icon" @click="isSearchOpen = true">
-            <span class="material-icons-round">search</span>
-        </button>
-
         <router-link to="/cart" class="c-cart-btn" v-if="userStore.isLogin && showCartIcon">
             <span class="material-icons-round c-cart-btn__icon">shopping_cart</span>
             <span class="c-badge u-animate-pop" v-if="store.cartCount > 0" :class="{ 'is-active': isPop }">
               {{ store.cartCount }}
             </span>
         </router-link>
+
+        <button class="c-btn-icon" @click="isSearchOpen = true">
+            <span class="material-icons-round">search</span>
+        </button>
 
         <template v-if="!userStore.isLogin">
              <router-link to="/login" class="c-btn c-btn--primary-round u-fw-bold">로그인</router-link>
@@ -145,7 +145,7 @@ const goToProfileOrLogin = () => {
     gap: clamp(12px, 3.5vw, 45px); 
 }
 .l-header-right { 
-    gap: clamp(8px, 1.5vw, 12px); /* 간격을 살짝 조정했습니다 */
+    gap: clamp(8px, 1.5vw, 12px); 
     flex-shrink: 0; 
 }
 
@@ -166,7 +166,6 @@ const goToProfileOrLogin = () => {
   transition: transform 0.3s ease;
 }
 
-/* 검색 오버레이 */
 .c-search-overlay {
     position: fixed; inset: 0;
     background: rgba(0, 0, 0, 0.15);
@@ -242,7 +241,6 @@ const goToProfileOrLogin = () => {
     display: flex; align-items: center; justify-content: center;
 }
 
-/* 버튼 관련 OOCSS */
 .c-btn { border: none; outline: none; cursor: pointer; text-decoration: none; white-space: nowrap; background: none; display: inline-flex; align-items: center; justify-content: center; }
 .c-btn--primary-round {
     background: var(--h-primary); color: #4A3F35; 

@@ -46,7 +46,7 @@
           </div>
           <div class="ai-visual">
             <div class="scan-effect"></div>
-            <img src="@/assets/images/joh-eun-sonyeon-chiwawa-gang-ajiui-chosanghwa.jpg" class="ai-img" alt="AI 진단 강아지">
+            <img src="@/assets/images/igmyeong-suuisa-cheongjingi-pekinijeu-gae-geomsa.jpg" class="ai-img" alt="AI 진단 강아지">
           </div>
         </section>
 
@@ -227,7 +227,7 @@ const quizData = [
     desc: '적록색맹과 비슷해요!<br>파란색과 노란색은 구분할 수 있어요.'
   },
   {
-    img: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?q=80&w=600&auto=format&fit=crop',
+    img: '@/assets/images/bakk-eseo-sigan-eul-bonaeneun-gwiyeoun-goyang-i.jpg',
     alt: '우는 고양이',
     question: '다 큰 고양이는<br>사람에게만 "야옹" 한다?',
     answer: 'O',

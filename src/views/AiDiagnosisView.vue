@@ -1,10 +1,12 @@
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'; 
+import { ref, nextTick, onMounted, computed } from 'vue'; 
 import { useRouter, useRoute } from 'vue-router'; 
+import { useUserStore } from '@/stores/user'; // ✅ 사용자 정보 스토어 임포트
 import DiagnosisCard from '@/components/DiagnosisCard.vue'; 
 
 const router = useRouter();
 const route = useRoute(); 
+const userStore = useUserStore(); // ✅ 스토어 인스턴스화
 const goHome = () => router.push('/');
 
 // 상태 변수
@@ -12,7 +14,10 @@ const messages = ref([]);
 const userInput = ref('');
 const isLoading = ref(false);
 const chatContentRef = ref(null);
-const fileInputRef = ref(null); // ✅ [기능 추가] 파일 입력 참조
+const fileInputRef = ref(null); 
+
+// ✅ 마이페이지와 동일한 프로필 이미지를 가져오기 위한 computed
+const userProfileImg = computed(() => userStore.petProfile?.petImgUrl || '');
 
 // 사이드바 기록
 const historyList = ref([
@@ -43,7 +48,7 @@ const startNewChat = () => {
     router.replace({ query: null });
 };
 
-// ✅ [기능 추가] 사진 업로드 핸들러
+// 사진 업로드 핸들러
 const triggerFileInput = () => {
     fileInputRef.value.click();
 };
@@ -54,17 +59,14 @@ const handleImageUpload = (event) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const imageUrl = e.target.result;
-            // 1. 유저 메시지에 이미지 추가
             messages.value.push({ type: 'user', imageUrl: imageUrl });
             scrollToBottom();
             
-            // 2. AI 분석 시작 시뮬레이션
             isLoading.value = true;
-            fetchAiResponse("눈 사진 분석"); // 사진 업로드 시 특정 키워드로 분석 유도
+            fetchAiResponse("사진 분석 요청"); 
         };
         reader.readAsDataURL(file);
     }
-    // 파일 선택 초기화 (같은 사진 연속 업로드 가능하게)
     event.target.value = '';
 };
 
@@ -83,7 +85,6 @@ const sendMessage = async () => {
 // AI 응답 로직
 const fetchAiResponse = async (text) => {
     setTimeout(() => {
-        // 사진 업로드 혹은 특정 키워드 포함 시 진단 결과 출력
         if (text.includes("눈") || text.includes("충혈") || text.includes("아파") || text.includes("빨개") || text.includes("사진")) {
             messages.value.push({ type: 'ai', text: "이미지 및 증상을 분석하고 있습니다. 잠시만 기다려주세요..." });
             scrollToBottom();
@@ -129,25 +130,26 @@ const clickSuggestion = (text) => {
   <div class="ai-container">
     
     <aside class="ai-sidebar">
-        <div class="sidebar-logo" @click="goHome">
-            <span class="material-icons-round logo-icon">pets</span>
-            <span class="logo-text">함께하개냥</span>
-        </div>
         <div class="sidebar-header">
-            <div class="user-avatar"></div>
-            <span class="user-name">최두용님</span>
+            <div 
+                class="user-avatar" 
+                :style="{ backgroundImage: userProfileImg ? `url(${userProfileImg})` : '' }"
+            ></div>
+            <span class="user-name">{{ userStore.user?.nickname || '사용자' }}님</span>
         </div>
 
-        <button class="btn-new-chat" @click="startNewChat">
-            <span class="material-icons-round" style="color:var(--primary-honey)">add</span>
-            새로운 진단 시작
-        </button>
+        <div class="sidebar-content">
+            <button class="btn-new-chat" @click="startNewChat">
+                <span class="material-icons-round" style="color:var(--primary-honey)">add</span>
+                새로운 진단 시작
+            </button>
 
-        <ul class="history-list">
-            <li v-for="h in historyList" :key="h.id" class="history-item">
-                <span class="material-icons-round history-icon">history</span> {{ h.title }}
-            </li>
-        </ul>
+            <ul class="history-list">
+                <li v-for="h in historyList" :key="h.id" class="history-item">
+                    <span class="material-icons-round history-icon">history</span> {{ h.title }}
+                </li>
+            </ul>
+        </div>
     </aside>
 
     <main class="chat-main">
@@ -204,7 +206,7 @@ const clickSuggestion = (text) => {
         <div class="input-area">
             <div class="input-container">
                 <input type="file" ref="fileInputRef" style="display: none" accept="image/*" @change="handleImageUpload">
-                <button class="btn-attach" @click="triggerFileInput">
+                <button class="btn-attach" @click="triggerFileInput" title="사진 업로드">
                     <span class="material-icons-round">add_photo_alternate</span>
                 </button>
                 
@@ -217,28 +219,47 @@ const clickSuggestion = (text) => {
 </template>
 
 <style scoped>
+/* 레이아웃 구성 */
 .ai-container { display: flex; height: 100vh; overflow: hidden; color: #333; }
-.ai-sidebar { width: 260px; background: #F9FAFB; padding: 20px; border-right: 1px solid #eee; display: flex; flex-direction: column; }
-.sidebar-logo { display: flex; align-items: center; gap: 6px; font-size: 20px; font-weight: 800; color: #4A3F35; margin-bottom: 30px; cursor: pointer; }
-.logo-icon { color: #FFD54F; font-size: 24px; }
-.btn-new-chat { width: 100%; padding: 12px; background: white; border: 1px solid #E5E7EB; border-radius: 12px; color: #111827; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; margin-bottom: 24px; }
-.btn-new-chat:hover { border-color: #FFD54F; background: #FFFDE7; }
+
+/* 사이드바 스타일 (상단 회색선 정렬) */
+.ai-sidebar { width: 260px; background: #F9FAFB; border-right: 1px solid #eee; display: flex; flex-direction: column; }
+
+/* ✅ 사이드바 헤더: 우측 채팅 헤더 높이(60px)와 선을 일치시킴 */
+.sidebar-header { 
+    height: 60px; 
+    padding: 0 20px; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    border-bottom: 1px solid #E5E7EB; 
+    background-color: #F9FAFB;
+    box-sizing: border-box;
+}
+.sidebar-content { padding: 24px 20px; flex: 1; display: flex; flex-direction: column; }
+
+/* 메인 채팅 영역 */
 .chat-main { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
 .chat-content { flex: 1; overflow-y: auto; padding: 20px 40px 100px; }
+
+/* 메시지 버블 스타일 */
 .msg-row { display: flex; margin-bottom: 20px; }
 .msg-row.user { justify-content: flex-end; }
 .msg-bubble { padding: 10px 16px; border-radius: 12px; max-width: 70%; background: #eee; overflow: hidden; }
 .msg-row.user .msg-bubble { background: #FFD54F; color: #4A3F35; font-weight: 500; }
 .msg-img { max-width: 100%; max-height: 300px; border-radius: 8px; display: block; }
 
+/* 하단 입력창 */
 .input-area { position: absolute; bottom: 0; width: 100%; padding: 20px; background: white; }
 .input-container { display: flex; gap: 10px; border: 1px solid #ddd; padding: 8px 15px; border-radius: 25px; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
 .chat-input { flex: 1; border: none; outline: none; font-size: 15px; }
 
+/* 버튼 스타일 */
 .btn-attach { background: none; border: none; cursor: pointer; color: #9CA3AF; display: flex; align-items: center; transition: color 0.2s; }
 .btn-attach:hover { color: #FFD54F; }
-.btn-send { width: 36px; height: 36px; border-radius: 50%; background: #FFD54F; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+.btn-send { width: 36px; height: 36px; border-radius: 50%; background: #FFD54F; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
+/* 웰컴 스크린 */
 .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 100px; }
 .welcome-logo-area { width: 80px; height: 80px; background: #FFD54F; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: 0 10px 20px rgba(255, 213, 79, 0.3); }
 .welcome-icon { font-size: 40px; color: white; }
@@ -250,13 +271,18 @@ const clickSuggestion = (text) => {
 .sug-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;}
 .sug-desc { font-size: 13px; color: #6B7280; }
 
+/* 사이드바 리스트 및 기타 */
+.btn-new-chat { width: 100%; padding: 12px; background: white; border: 1px solid #E5E7EB; border-radius: 12px; color: #111827; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; margin-bottom: 24px; }
+.btn-new-chat:hover { border-color: #FFD54F; background: #FFFDE7; }
 .history-list { list-style: none; overflow-y: auto; flex: 1; }
 .history-item { padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .history-item:hover { background: #E5E7EB; color: #111827; }
+
 .chat-header { height: 60px; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; padding: 0 32px; font-weight: bold; }
 .ver-badge { font-size: 12px; background: #F3F4F6; padding: 4px 8px; border-radius: 6px; color: #666; margin-left: 6px; font-weight: normal; }
-.sidebar-header { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #E5E7EB; }
-.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #ddd; background-size: cover; background-image: url('https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80'); }
-.user-name { font-size: 14px; font-weight: 700; }
+
+/* 사용자 아바타 스타일 */
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #ddd; background-size: cover; background-position: center; border: 1px solid #eee; }
+.user-name { font-size: 14px; font-weight: 700; color: #4A3F35; }
 .history-icon { font-size: 16px; color: #9CA3AF; }
 </style>
