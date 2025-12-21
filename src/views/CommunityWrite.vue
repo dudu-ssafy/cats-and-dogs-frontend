@@ -2,6 +2,9 @@
 import { ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
+// ✅ [추가] API 관련 임포트
+import { boardApi } from '@/api/board';
+
 // ✅ [추가] Tiptap 관련 임포트
 import { Editor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
@@ -10,13 +13,13 @@ import Image from '@tiptap/extension-image';
 import ImageResize from 'tiptap-extension-resize-image';
 import FileHandler from '@tiptap/extension-file-handler'
 
-// 실행 시
 const router = useRouter();
 const userStore = useUserStore();
 
 // 입력 데이터
 const category = ref('qna');
 const title = ref('');
+const isLoading = ref(false);
 
 // ✅ [추가] Tiptap 에디터 설정
 const editor = new Editor({
@@ -24,7 +27,7 @@ const editor = new Editor({
     extensions: [
         StarterKit,
         Underline,
-        // ✅ Image 기능을 포함한 ImageResize 단독 설정 (또는 Image 뒤에 배치)
+        // ✅ Image 기능을 포함한 ImageResize 단독 설정
         Image.configure({
             allowBase64: true,
         }),
@@ -32,24 +35,22 @@ const editor = new Editor({
         FileHandler.configure({
             allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
             onDrop: (currentEditor, files, pos) => {
-                if (!files.length) return false;
+                if (!files || files.length === 0) return false;
                 files.forEach(file => {
                     const fileReader = new FileReader()
                     fileReader.readAsDataURL(file)
                     fileReader.onload = () => {
-                        // ✅ pos 위치로 포커스를 옮긴 후 setImage 커맨드 실행
-                        // 이렇게 해야 ImageResize 익스텐션이 객체를 인지합니다.
                         currentEditor.chain()
                             .focus()
                             .setTextSelection(pos) 
                             .setImage({ src: fileReader.result })
                             .run()
                     }
-                })
+                });
                 return true;
             },
             onPaste: (currentEditor, files) => {
-                if (!files.length) return false;
+                if (!files || files.length === 0) return false;
                 files.forEach(file => {
                     const fileReader = new FileReader()
                     fileReader.readAsDataURL(file)
@@ -59,7 +60,8 @@ const editor = new Editor({
                             .setImage({ src: fileReader.result })
                             .run()
                     }
-                })
+                });
+                return true;
             },
         }),
     ],
@@ -67,9 +69,10 @@ const editor = new Editor({
         attributes: {
             class: 'tiptap-editor-inner',
         },
-        // ✅ 내부 이동 시 복사되는 현상을 방지하기 위한 드롭 핸들링 보완
+        // ✅ 내부 이동 시 복사 방지
         handleDrop: (view, event, slice, moved) => {
-            if (moved) return false; // Tiptap 내부 이동은 기본 동작에 맡김
+            if (moved) return false;
+            return false;
         }
     }
 });
@@ -78,7 +81,7 @@ onBeforeUnmount(() => {
     editor.destroy();
 });
 
-// ✅ [추가] 사이드바 메뉴 클릭 시 목록 페이지로 이동하며 쿼리 전달
+// ✅ 사이드바 메뉴 클릭 시 이동
 const goCategory = (cat) => {
     router.push({ path: '/community', query: { category: cat } });
 };
@@ -91,53 +94,49 @@ const goBack = () => {
 };
 
 // 게시글 등록
-const submitPost = () => {
+const submitPost = async () => {
+    if (!userStore.isLogin) {
+        alert('로그인이 필요한 서비스입니다.');
+        router.push('/login');
+        return;
+    }
+
     if(!title.value.trim()) {
         alert('제목을 입력해주세요!');
         return;
     }
     
-    // 에디터 내용(HTML) 가져오기
     const contentHtml = editor.getHTML();
     const plainText = editor.getText();
     
-    // 내용 길이 체크
     if(plainText.trim().length < 5) {
         alert('내용을 조금 더 작성해주세요!');
         return;
     }
 
-    // 기존 게시글 목록 불러오기 (서버 연동 전 임시)
-    const existingPosts = JSON.parse(localStorage.getItem('community-posts') || '[]');
-    
-    // 새 게시글 객체 생성
-    const newPost = {
-        id: Date.now(),
-        category: category.value,
-        categoryName: getCategoryName(category.value),
-        title: title.value,
-        author: userStore.user?.nickname || '익명',
-        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        views: 0,
-        isNew: true,
-        content: contentHtml,
-        isLiked: false
-    };
+    isLoading.value = true;
+    try {
+        // 백엔드 pk 매핑 (1: 정보, 2: 자유, 3: 질문)
+        const categoryMap = { 'info': 1, 'free': 2, 'qna': 3 };
 
-    existingPosts.unshift(newPost);
-    localStorage.setItem('community-posts', JSON.stringify(existingPosts));
+        const postData = {
+            category: categoryMap[category.value] || 2,
+            title: title.value,
+            content: contentHtml,
+        };
 
-    alert('게시글이 등록되었습니다!');
-    router.push('/community'); 
+        await boardApi.createPost(postData);
+        alert('게시글이 성공적으로 등록되었습니다! 🐾');
+        router.push('/community'); 
+    } catch (error) {
+        console.error('게시글 등록 실패:', error);
+        alert('게시글 등록 중 오류가 발생했습니다.');
+    } finally {
+        isLoading.value = false;
+    }
 };
 
-// 카테고리 이름 변환 헬퍼
-const getCategoryName = (code) => {
-    const map = { free: '자유', qna: '질문', info: '정보' };
-    return map[code] || '기타';
-};
-
-// 이미지 처리 (툴바 버튼용)
+// 이미지 추가 (툴바용)
 const addImage = () => {
     const url = window.prompt('이미지 URL을 입력하시거나, 파일을 드래그해서 넣어주세요.');
     if (url) {
@@ -217,7 +216,7 @@ const addImage = () => {
                     <div class="form-group">
                         <label class="form-label">내용</label>
                         
-                        <div class="input-skin tiptap-wrapper">
+                        <div class="input-skin tiptap-wrapper" :class="{ 'loading-overlay': isLoading }">
                             <div class="editor-toolbar" v-if="editor">
                                 <button type="button" class="tool-btn" 
                                     @click="editor.chain().focus().toggleBold().run()"
@@ -248,8 +247,10 @@ const addImage = () => {
                     </div>
 
                     <div class="action-buttons">
-                        <button type="button" class="btn-base btn-cancel" @click="goBack">취소</button>
-                        <button type="submit" class="btn-base btn-submit">등록하기</button>
+                        <button type="button" class="btn-base btn-cancel" @click="goBack" :disabled="isLoading">취소</button>
+                        <button type="submit" class="btn-base btn-submit" :disabled="isLoading">
+                            {{ isLoading ? '등록 중...' : '등록하기' }}
+                        </button>
                     </div>
                 </form>
 
