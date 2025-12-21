@@ -1,31 +1,35 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-// 🔥 [추가] userStore 임포트 (가입 후 로그인 처리 시 필요할 수 있음)
 import { useUserStore } from '@/stores/user'; 
 
 const router = useRouter();
 const userStore = useUserStore(); // 인스턴스 사용
 
-const nickname = ref('');
+const username = ref('');
 const email = ref('');
 const password = ref('');
 
-const handleSignup = () => {
-    if(!nickname.value || !email.value || !password.value) {
+const handleSignup = async () => {
+    if(!username.value || !email.value || !password.value) {
         alert('모든 항목을 입력해주세요.');
         return;
     }
-    
-    // 🔥 [수정] 회원가입 성공 후, 입력된 닉네임과 이메일로 자동 로그인 처리
-    userStore.login({ 
-        username: email.value,
-        nickname: nickname.value // 🔥 [핵심] 입력된 닉네임을 스토어에 전달
-    });
-
-    alert(`반가워요, ${nickname.value}님! 회원가입 및 로그인이 완료되었습니다. 🐾`);
-    router.push('/'); // 홈으로 이동 (또는 로그인 페이지로 이동)
+    try {
+        await userStore.signup({
+            username: username.value,
+            email: email.value,
+            password: password.value
+        });
+        alert(`반가워요, ${username.value}님! 회원가입이 완료되었습니다. 🐾`);
+        router.push('/'); 
+    } catch (error) {
+        console.error('Signup error:', error.response.data['email']);
+        const errorMsg = error.response?.data['email'];
+        alert(`회원가입 실패:\n${errorMsg}`);
+    }
 };
+
 </script>
 
 <template>
@@ -44,7 +48,7 @@ const handleSignup = () => {
             <form @submit.prevent="handleSignup">
                 <div class="input-group">
                     <span class="label">이름(닉네임)</span>
-                    <input type="text" class="input-field" placeholder="집사님 이름을 알려주세요" v-model="nickname" required>
+                    <input type="text" class="input-field" placeholder="집사님 이름을 알려주세요" v-model="username" required>
                 </div>
                 <div class="input-group">
                     <span class="label">이메일</span>
