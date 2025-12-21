@@ -30,7 +30,6 @@ onMounted(() => {
     }
 });
 
-// ✅ [새로운 진단 시작] 버튼 기능
 const startNewChat = () => {
     messages.value = [];
     userInput.value = '';
@@ -45,9 +44,7 @@ const selectSession = async (sessionId) => {
     try {
         currentSessionId.value = sessionId;
         const response = await api.get(`chats/${sessionId}/`);
-        // Assuming the response has messages in the detail view
-        // Adjust based on your actual ChatSessionDetailSerializer
-        messages.value = response.data.messages.map(m => ({
+        messages.value = response.data.history.map(m => ({
             type: m.role === 'user' ? 'user' : 'ai',
             text: m.content
         }));
