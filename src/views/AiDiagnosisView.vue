@@ -54,7 +54,6 @@ const selectSession = async (sessionId) => {
     }
 };
 
-// 메시지 전송
 const sendMessage = async () => {
     if(!userInput.value.trim()) return;
     messages.value.push({ type: 'user', text: userInput.value });
@@ -66,9 +65,7 @@ const sendMessage = async () => {
     await fetchAiResponse(text);
 };
 
-// AI 응답 로직 (FastAPI 스트리밍 연동)
 const fetchAiResponse = async (text) => {
-    // 이전 메시지들을 history 형식으로 변환 (FastAPI가 요구하는 형식)
     const history = messages.value.slice(0, -1).map(m => ({
         role: m.type === 'user' ? 'user' : 'model',
         content: m.text || ''
@@ -101,20 +98,19 @@ const fetchAiResponse = async (text) => {
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            
+
             const chunk = decoder.decode(value, { stream: true });
             
-            if (chunk.includes('__CHAT_ID__:')) {
-                const parts = chunk.split('__CHAT_ID__:');
+            if (chunk.includes('[CHAT_ID]:')) {
+                const parts = chunk.split('[CHAT_ID]:');
                 const textPart = parts[0];
                 const idPart = parts[1];
-                
-                aiMessage.text += textPart;
-                currentSessionId.value = parseInt(idPart);
+                aiMessage.text += textPart.trim();
+                currentSessionId.value = parseInt(idPart.trim());
             } else {
                 aiMessage.text += chunk;
             }
-            
+
             scrollToBottom();
         }
 
