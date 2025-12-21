@@ -6,8 +6,11 @@ import { useUserStore } from '@/stores/user';
 import { Editor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
+import Image from '@tiptap/extension-image';
 import ImageResize from 'tiptap-extension-resize-image';
+import FileHandler from '@tiptap/extension-file-handler'
 
+// 실행 시
 const router = useRouter();
 const userStore = useUserStore();
 
@@ -15,63 +18,58 @@ const userStore = useUserStore();
 const category = ref('qna');
 const title = ref('');
 
-// 이미지 업로드 처리 (Base64 변환)
-const processImageUpload = async (file) => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target.result);
-    reader.readAsDataURL(file);
-  });
-};
-
 // ✅ [추가] Tiptap 에디터 설정
 const editor = new Editor({
-    content: '<p>궁금한 점이나 공유하고 싶은 이야기를 자유롭게 적어주세요!</p>',
+    content: '',
     extensions: [
         StarterKit,
         Underline,
-        ImageResize.configure({
+        // ✅ Image 기능을 포함한 ImageResize 단독 설정 (또는 Image 뒤에 배치)
+        Image.configure({
             allowBase64: true,
+        }),
+        ImageResize, 
+        FileHandler.configure({
+            allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
+            onDrop: (currentEditor, files, pos) => {
+                if (!files.length) return false;
+                files.forEach(file => {
+                    const fileReader = new FileReader()
+                    fileReader.readAsDataURL(file)
+                    fileReader.onload = () => {
+                        // ✅ pos 위치로 포커스를 옮긴 후 setImage 커맨드 실행
+                        // 이렇게 해야 ImageResize 익스텐션이 객체를 인지합니다.
+                        currentEditor.chain()
+                            .focus()
+                            .setTextSelection(pos) 
+                            .setImage({ src: fileReader.result })
+                            .run()
+                    }
+                })
+                return true;
+            },
+            onPaste: (currentEditor, files) => {
+                if (!files.length) return false;
+                files.forEach(file => {
+                    const fileReader = new FileReader()
+                    fileReader.readAsDataURL(file)
+                    fileReader.onload = () => {
+                        currentEditor.chain()
+                            .focus()
+                            .setImage({ src: fileReader.result })
+                            .run()
+                    }
+                })
+            },
         }),
     ],
     editorProps: {
         attributes: {
             class: 'tiptap-editor-inner',
         },
-        // 1. 드래그 앤 드롭 핸들러
-        handleDrop(view, event, slice, moved) {
-            if (!moved && event.dataTransfer?.files?.length) {
-                const file = event.dataTransfer.files[0];
-                if (file.type.startsWith('image/')) {
-                    const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
-                    
-                    processImageUpload(file).then(url => {
-                        const { schema } = view.state;
-                        const node = schema.nodes.image.create({ src: url });
-                        const transaction = view.state.tr.insert(coordinates.pos, node);
-                        view.dispatch(transaction);
-                    });
-                    return true;
-                }
-            }
-            return false;
-        },
-        // 2. 복사-붙여넣기 핸들러
-        handlePaste(view, event) {
-            const items = Array.from(event.clipboardData?.items || []);
-            const imageItem = items.find(item => item.type.startsWith('image/'));
-
-            if (imageItem) {
-                const file = imageItem.getAsFile();
-                processImageUpload(file).then(url => {
-                    const { schema } = view.state;
-                    const node = schema.nodes.image.create({ src: url });
-                    const transaction = view.state.tr.replaceSelectionWith(node);
-                    view.dispatch(transaction);
-                });
-                return true;
-            }
-            return false;
+        // ✅ 내부 이동 시 복사되는 현상을 방지하기 위한 드롭 핸들링 보완
+        handleDrop: (view, event, slice, moved) => {
+            if (moved) return false; // Tiptap 내부 이동은 기본 동작에 맡김
         }
     }
 });
