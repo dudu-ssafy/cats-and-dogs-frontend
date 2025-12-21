@@ -44,24 +44,38 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
 
         <section class="category-nav">
           <div class="cat-item" @click="setCategory('전체')" :class="{ 'is-active': selectedCategory === '전체' }">
-            <div class="cat-icon"><span class="material-icons-round">grid_view</span></div>
+            <div class="cat-icon--pure">
+              <img src="@/assets/images/shop_all_icon.png" alt="전체보기" class="cat-img--all">
+            </div>
             <span class="cat-name">전체보기</span>
           </div>
+
           <div class="cat-item" @click="setCategory('사료/간식')" :class="{ 'is-active': selectedCategory === '사료/간식' }">
-            <div class="cat-icon"><span class="material-icons-round">restaurant</span></div>
+            <div class="cat-icon--pure">
+              <img src="@/assets/images/shop_all_food.png" alt="사료/간식" class="cat-img--all">
+            </div>
             <span class="cat-name">사료/간식</span>
           </div>
+
           <div class="cat-item" @click="setCategory('의류/패션')" :class="{ 'is-active': selectedCategory === '의류/패션' }">
-              <div class="cat-icon"><span class="material-icons-round">checkroom</span></div>
-              <span class="cat-name">의류/패션</span>
+            <div class="cat-icon--pure">
+              <img src="@/assets/images/shop_all_clothes.png" alt="의류/패션" class="cat-img--all cat-img--clothes">
+            </div>
+            <span class="cat-name">의류/패션</span>
           </div>
+
           <div class="cat-item" @click="setCategory('리빙/하우스')" :class="{ 'is-active': selectedCategory === '리빙/하우스' }">
-              <div class="cat-icon"><span class="material-icons-round">bed</span></div>
-              <span class="cat-name">리빙/하우스</span>
+            <div class="cat-icon--pure">
+              <img src="@/assets/images/shop_all_living.png" alt="리빙/하우스" class="cat-img--all">
+            </div>
+            <span class="cat-name">리빙/하우스</span>
           </div>
+
           <div class="cat-item" @click="setCategory('장난감')" :class="{ 'is-active': selectedCategory === '장난감' }">
-              <div class="cat-icon"><span class="material-icons-round">sports_baseball</span></div>
-              <span class="cat-name">장난감</span>
+            <div class="cat-icon--pure">
+              <img src="@/assets/images/shop_all_toy.png" alt="장난감" class="cat-img--all">
+            </div>
+            <span class="cat-name">장난감</span>
           </div>
         </section>
 
@@ -120,10 +134,9 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
 
 <style scoped>
 /* ============================================================
-   1. STRUCTURE (구조): 레이아웃과 배치를 담당
+   1. STRUCTURE (구조): 레이아웃 및 정렬
    ============================================================ */
 .shop-hero {
-  /* 이미지 비율에 맞춘 높이 설정 (찌그러짐 방지) */
   aspect-ratio: 1200 / 450;
   width: 100%;
   margin-top: 24px;
@@ -131,8 +144,8 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
   border-radius: 28px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: flex-start;
+  text-align: left;
   position: relative;
   overflow: hidden;
 }
@@ -140,67 +153,102 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
 .banner__content {
   position: relative;
   z-index: 2;
-  /* 텍스트 가독성을 위해 상단에서 살짝 내림 */
+  padding-left: 80px; 
   transform: translateY(-10px);
 }
 
+.cat-icon--pure {
+  width: 120px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.cat-img--all {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cat-img--clothes {
+  transform: scale(1.3);
+}
+
 /* ============================================================
-   2. SKIN (스킨): 색상, 글꼴, 시각적 스타일링
+   2. SKIN (스킨): 배경 이미지 배율 축소 및 위치 최적화
    ============================================================ */
 .banner--winter {
-  background-image: url('@/assets/images/baegyeong-heuligee-salangseuleoun-huinsaeg-gang-ajiui-geunjeob-chwal-yeong-syas.jpg'); 
-  background-size: cover;
-  background-position: center;
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+              url('@/assets/images/two-girls-with-small-dog-are-sitting-couch-new-year-s-eve.jpg') no-repeat;
+  
+  /* [수정] 너무 컸던 배율을 160%에서 130%로 축소하여 부담을 줄임 */
+  background-size: 130% auto;
+  
+  /* [수정] 배율이 줄어든 만큼 강아지가 잘 보이도록 위치를 5% 지점으로 미세 조정 */
+  background-position: 5% center; 
 }
 
 .banner__subtitle {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
-  /* 사진 속 강아지의 짙은 밤색 눈동자 컬러를 활용하여 붕 뜨지 않게 조절 */
-  color: #5D4037;
-  margin-bottom: 10px;
+  color: #FFF9C4; 
+  margin-bottom: 12px;
   letter-spacing: -0.5px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .banner__title {
-  /* 크기를 52px로 조정하여 부담스럽지 않게 수정 */
-  font-size: 52px;
+  font-size: 58px;
   font-weight: 900;
-  color: #FFFFFF;
-  margin-bottom: 30px;
-  line-height: 1.2;
-  /* 밝은 배경에서 흰 글씨가 잘 보이도록 부드러운 그림자 추가 */
-  text-shadow: 0 4px 15px rgba(93, 64, 55, 0.3);
+  color: #ffffff;
+  margin-bottom: 35px;
+  line-height: 1.1;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
-/* [OOCSS] 버튼 객체: 촌스러운 주황색 대신 세련된 딥 레드 적용 */
 .btn--elegant-red {
   display: inline-block;
-  background-color: #B71C1C; /* 산타 옷의 클래식 레드 */
+  background-color: #B71C1C;
   color: #FFFFFF;
-  padding: 14px 42px;
+  padding: 16px 48px;
   border-radius: 50px;
   font-weight: 700;
   font-size: 18px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(183, 28, 28, 0.2);
+  box-shadow: 0 8px 20px rgba(183, 28, 28, 0.2);
 }
 
 .btn--elegant-red:hover {
   transform: translateY(-3px);
   background-color: #D32F2F;
-  box-shadow: 0 6px 20px rgba(183, 28, 28, 0.4);
+  box-shadow: 0 12px 25px rgba(183, 28, 28, 0.3);
+}
+
+/* 아이콘 활성화 필터 효과 */
+.cat-item.is-active .cat-img--all {
+  filter: drop-shadow(0 0 15px rgba(255, 213, 79, 0.8));
+}
+
+.cat-item.is-active .cat-img--all:not(.cat-img--clothes) {
+  transform: scale(1.2);
+}
+
+.cat-item.is-active .cat-img--clothes {
+  transform: scale(1.5);
 }
 
 /* ============================================================
-   기존 스타일 유지 (수정하지 않음)
+   기존 스타일 유지 (절대 수정하지 않음)
    ============================================================ */
 .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
-.category-nav { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 60px; background: white; padding: 24px 40px; border-radius: 20px; border: 1px solid #E5E7EB; }
+.category-nav { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 60px; background: white; padding: 24px 40px; border-radius: 20px; border: 1px solid #E5E7EB; align-items: flex-end; }
 .cat-item { display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; color: #4B5563; }
-.cat-icon { width: 64px; height: 64px; background: #F3F4F6; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #111827; }
-.cat-item.is-active .cat-icon { background: #FFD54F; color: white; }
 .section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
 .section-title { font-size: 24px; font-weight: 800; }
 .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; padding-bottom: 80px; }

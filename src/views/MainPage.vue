@@ -55,7 +55,10 @@
           
           <div class="board-box">
             <div class="board-header">
-              <h3>🔥 핫한 이야기</h3>
+              <div class="c-header-group">
+                <img src="@/assets/images/hot_icon.png" class="c-header-mini-icon" alt="hot">
+                <h3>핫한 이야기</h3>
+              </div>
               <span @click="goToCommunity('popular')">더보기 +</span>
             </div>
             <ul>
@@ -74,7 +77,10 @@
 
           <div class="board-box">
             <div class="board-header">
-              <h3>✨ 실시간 질문</h3>
+              <div class="c-header-group">
+                <img src="@/assets/images/new_icon.png" class="c-header-mini-icon" alt="new">
+                <h3>실시간 질문</h3>
+              </div>
               <span @click="goToCommunity('latest')">더보기 +</span>
             </div>
             <ul>
@@ -151,7 +157,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router'; 
 import api from '@/api';
-
+import quizImg01 from '@/assets/images/joh-eun-sonyeon-chiwawa-gang-ajiui-chosanghwa.jpg';
+import quizImg02 from '@/assets/images/nuwoseo-hapumhaneun-hoesaeg-julmunui-goyang-iui-selo-syas.jpg';
+import quizImg03 from '@/assets/images/gwiyeoun-bodeo-kol-li-gang-ajiui-seutyudio-syas.jpg';
 const router = useRouter();
 const searchQuery = ref('');
 
@@ -220,21 +228,21 @@ const isFlipped = ref(false);
 
 const quizData = [
   {
-    img: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=600&auto=format&fit=crop',
+    img: quizImg01,
     alt: '강아지 눈',
     question: '강아지는 세상을<br>흑백으로만 본다?',
     answer: 'X',
     desc: '적록색맹과 비슷해요!<br>파란색과 노란색은 구분할 수 있어요.'
   },
   {
-    img: '@/assets/images/bakk-eseo-sigan-eul-bonaeneun-gwiyeoun-goyang-i.jpg',
+    img: quizImg02,
     alt: '우는 고양이',
     question: '다 큰 고양이는<br>사람에게만 "야옹" 한다?',
     answer: 'O',
     desc: '고양이끼리는 눈빛과 냄새로 대화해요.<br>집사에게만 목소리를 내는 거랍니다!'
   },
   {
-    img: 'https://images.unsplash.com/photo-1554692992-e422ae42550e?q=80&w=600&auto=format&fit=crop',
+    img: quizImg03,
     alt: '강아지 코',
     question: '강아지 코 지문으로<br>신원 확인이 가능하다?',
     answer: 'O',
@@ -273,7 +281,7 @@ onMounted(() => {
 
 <style scoped>
 /* ========================================
-    (스타일은 기존과 100% 동일합니다)
+    기존 스타일 100% 유지 + 추가 스타일
    ========================================
 */
 .home-container {
@@ -296,6 +304,10 @@ h1, h2, h3, h4, .s-title, .tag-text, .badge { font-family: var(--font-title); }
 a { text-decoration: none; color: inherit; transition: 0.3s; }
 ul { list-style: none; padding: 0; margin: 0; }
 button { font-family: var(--font-body); border: none; cursor: pointer; }
+
+/* ✅ 새로 추가된 미니 아이콘 스타일 (OOCSS) */
+.c-header-group { display: flex; align-items: center; gap: 8px; }
+.c-header-mini-icon { width: 30px; height: 26px; object-fit: contain; }
 
 /* 1. Hero Section */
 .hero-wrap {

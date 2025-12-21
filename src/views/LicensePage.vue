@@ -32,16 +32,19 @@ const goBack = () => router.back();
             <div class="c-item"><label>성별</label> <span>{{ pet?.gender }}</span></div>
             <div class="c-item"><label>품종</label> <span>{{ pet?.breed }}</span></div>
             <div class="c-item"><label>중성화여부</label> <span>{{ pet?.neutered }}</span></div>
-            <div class="c-item"><label>연락처</label> <span>{{ pet?.contact }}</span></div>
             <div class="c-item"><label>보호자</label> <span>{{ pet?.ownerNickname }}</span></div>
           </div>
           
+
+          <div class="c-address-row">
+          <label>연락처</label> <span>{{ pet?.contact}}</span>
+          </div>
           <div class="c-address-row">
             <label>주소</label> <span>{{ pet?.address }}</span>
           </div>
 
           <div class="u-footer-text">
-            2025.11.15 함께하개냥
+            2025.12.15 함께하개냥
           </div>
         </div>
 
