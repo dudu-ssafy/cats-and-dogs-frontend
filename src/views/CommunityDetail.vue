@@ -1,33 +1,28 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useUserStore } from '@/stores/user'; // ✅ userStore 임포트
+import { useUserStore } from '@/stores/user';
+import { boardApi } from '@/api/board';
 
 const route = useRoute();
 const router = useRouter();
-const userStore = useUserStore(); // ✅ userStore 인스턴스
+const userStore = useUserStore();
 
 const post = ref(null); 
 const isLiked = ref(false); 
-const likeCount = ref(5); 
+const likeCount = ref(0); 
 
-onMounted(() => {
-    const postId = Number(route.params.id);
-    const allPosts = JSON.parse(localStorage.getItem('community-posts') || '[]');
-    const foundPost = allPosts.find(p => p.id === postId);
-
-    if (foundPost) {
-        post.value = foundPost;
+onMounted(async () => {
+    const postId = route.params.id;
+    try {
+        const response = await boardApi.getPostDetail(postId);
+        post.value = response.data;
         
-        // 목록과 데이터 동기화
-        isLiked.value = foundPost.isLiked || false;
-        if (foundPost.likeCount !== undefined) {
-            likeCount.value = foundPost.likeCount;
-        }
-
-        foundPost.views++;
-        localStorage.setItem('community-posts', JSON.stringify(allPosts));
-    } else {
+        // 데이터 동기화
+        isLiked.value = post.value.isLiked || false;
+        likeCount.value = post.value.likesCount || 0;
+    } catch (error) {
+        console.error('게시글 로드 실패:', error);
         alert('삭제되었거나 존재하지 않는 게시글입니다.');
         router.push('/community');
     }
@@ -37,26 +32,23 @@ const goList = () => {
     router.push('/community');
 };
 
-
-// ✅ [추가] 사이드바 클릭 시 목록 페이지로 이동하며 쿼리(카테고리 정보)를 전달하는 함수
 const goCategory = (cat) => {
     router.push({ path: '/community', query: { category: cat } });
 };
 
-// 좋아요 토글 시 localStorage의 데이터까지 수정
-const toggleLike = () => {
+const toggleLike = async () => {
+    if (!userStore.isLogin) {
+        alert('로그인이 필요한 서비스입니다.');
+        return;
+    }
     if (!post.value) return;
 
-    isLiked.value = !isLiked.value;
-    likeCount.value += isLiked.value ? 1 : -1;
-
-    const allPosts = JSON.parse(localStorage.getItem('community-posts') || '[]');
-    const postIndex = allPosts.findIndex(p => p.id === post.value.id);
-
-    if (postIndex !== -1) {
-        allPosts[postIndex].isLiked = isLiked.value;
-        allPosts[postIndex].likeCount = likeCount.value;
-        localStorage.setItem('community-posts', JSON.stringify(allPosts));
+    try {
+        await boardApi.toggleLike(post.value.id);
+        isLiked.value = !isLiked.value;
+        likeCount.value += isLiked.value ? 1 : -1;
+    } catch (error) {
+        console.error('좋아요 토글 실패:', error);
     }
 };
 </script>
@@ -114,7 +106,7 @@ const toggleLike = () => {
                     
                     <div class="post-meta-row">
                         <div class="author-info">
-                            <img src="https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" class="author-img">
+                            <img :src="post.authorProfileImg || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="author-img">
                             <div>
                                 <span class="author-name">{{ post.author }}</span>
                                 <span class="post-date">{{ post.date }}</span>
