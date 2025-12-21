@@ -1,18 +1,57 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user'; 
+import { boardApi } from '@/api/board';
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 
 const posts = ref([]);
+const popularPosts = ref([]);
 const currentCategory = ref('all'); 
+const totalPosts = ref(0);
+const isLoading = ref(false);
 
-// ✅ 10개씩 보기 설정
 const currentPage = ref(1);
 const itemsPerPage = 10; 
+
+const fetchPopularPosts = async () => {
+    try {
+        const response = await boardApi.getPopularPosts();
+        popularPosts.value = response.data;
+    } catch (error) {
+        console.error('Failed to fetch popular posts:', error);
+    }
+};
+
+const fetchPosts = async () => {
+    isLoading.value = true;
+    try {
+        const params = {
+            page: currentPage.value,
+        };
+
+        if (currentCategory.value === 'hot') {
+            params.type = 'hot';
+        } else if (currentCategory.value === 'my-posts') {
+            params.type = 'my-posts';
+        } else if (currentCategory.value === 'liked-posts') {
+            params.type = 'liked-posts';
+        } else if (currentCategory.value !== 'all') {
+            params.category = currentCategory.value;
+        }
+
+        const response = await boardApi.getPosts(params);
+        posts.value = response.data.results;
+        totalPosts.value = response.data.count;
+    } catch (error) {
+        console.error('Failed to fetch posts:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
 
 const goWrite = () => {
     if (!userStore.isLogin) {
@@ -23,41 +62,7 @@ const goWrite = () => {
     router.push('/community/write');
 };
 
-// ✅ 초기 데이터
-const initialData = [
-    { id: 4224, category: 'qna', categoryName: '질문', title: '강아지가 산책 중 풀을 뜯어먹는데 괜찮나요?', author: '풀밭위의견', date: '15:10', views: 12, isNew: true, isLiked: true },
-    { id: 4223, category: 'free', categoryName: '자유', title: '퇴근하고 집에 오니 휴지 파티가 열렸네요 ^^...', author: '해탈한집사', date: '14:55', views: 45, isNew: true, isLiked: false },
-    { id: 4222, category: 'info', categoryName: '정보', title: '고양이 음수량 늘리는 확실한 방법 (습식 추천)', author: '물먹는하마', date: '14:40', views: 88, isNew: true, isLiked: true },
-    { id: 4221, category: 'free', categoryName: '자유', title: '주말에 펫페어 가시는 분 계신가요?', author: '쇼핑중독', date: '14:30', views: 102, isNew: false },
-    { id: 4220, category: 'qna', categoryName: '질문', title: '사료를 바꿨는데 눈물이 터졌어요 ㅠㅠ', author: '눈물자국', date: '14:25', views: 67, isNew: false },
-    { id: 4219, category: 'info', categoryName: '정보', title: '반려견 동반 가능한 서울 근교 카페 리스트', author: '카페투어', date: '14:22', views: 310, isNew: false },
-    { id: 4218, category: 'free', categoryName: '자유', title: '미용 맡겼는데 곰돌이 컷 너무 귀여워요 (사진)', author: '곰돌이맘', date: '14:20', views: 150, isNew: false },
-    { id: 4217, category: 'qna', categoryName: '질문', title: '중성화 수술 후 넥카라 언제까지 해야 하나요?', author: '걱정인형', date: '14:15', views: 95, isNew: false },
-    { id: 4216, category: 'info', categoryName: '정보', title: '강아지 등록제 인식칩 내장형 vs 외장형 장단점', author: '칩박사', date: '14:10', views: 205, isNew: false },
-    { id: 4215, category: 'qna', categoryName: '질문', title: '저희 강아지가 갑자기 산책을 거부하는데 왜 그럴까요? ㅠㅠ', author: '초보집사', date: '14:05', views: 89, isNew: false },
-    { id: 4214, category: 'info', categoryName: '정보', title: '겨울철 강아지 발바닥 관리 꿀팁 정리해봤어요', author: '멍멍박사', date: '13:50', views: 245, isNew: false },
-    { id: 4213, category: 'free', categoryName: '자유', title: '오늘 날씨 너무 좋아서 한강 다녀왔어요! (사진)', author: '산책왕', date: '12:10', views: 112, isNew: false },
-    { id: 4212, category: 'info', categoryName: '정보', title: '서울 XX동물병원 스케일링 비용 정보 공유해요', author: '건강이최고', date: '11:45', views: 330, isNew: false },
-    { id: 4210, category: 'free', categoryName: '자유', title: '냥줍했어요... 이름 추천 받습니다 (치즈냥)', author: '냥냥펀치', date: '10:55', views: 890, isNew: false },
-    { id: 4209, category: 'free', categoryName: '자유', title: '강아지 옷 샀는데 사이즈 실패했어요 나눔합니다', author: '천사견', date: '10:10', views: 55, isNew: false },
-];
-
 onMounted(() => {
-    const saved = localStorage.getItem('community-posts');
-    
-    if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.length < 5) {
-            posts.value = initialData;
-            localStorage.setItem('community-posts', JSON.stringify(initialData));
-        } else {
-            posts.value = parsed;
-        }
-    } else {
-        posts.value = initialData;
-        localStorage.setItem('community-posts', JSON.stringify(initialData));
-    }
-
     if (route.query.category) {
         currentCategory.value = route.query.category;
     }
@@ -66,33 +71,17 @@ onMounted(() => {
         if (route.query.sort === 'popular') currentCategory.value = 'hot';
         else if (route.query.sort === 'latest') currentCategory.value = 'all';
     }
+
+    fetchPosts();
+    fetchPopularPosts();
 });
 
-// ✅ 필터링 로직
-const filteredPosts = computed(() => {
-    let result = [];
-    if (currentCategory.value === 'all') {
-        result = posts.value;
-    } else if (currentCategory.value === 'hot') {
-        result = posts.value.filter(p => p.views >= 100).sort((a,b) => b.views - a.views);
-    } else if (currentCategory.value === 'my-posts') {
-        result = posts.value.filter(p => p.author === userStore.user?.username);
-    } else if (currentCategory.value === 'liked-posts') {
-        result = posts.value.filter(p => p.isLiked === true);
-    } else {
-        result = posts.value.filter(p => p.category === currentCategory.value);
-    }
-    return result;
-});
-
-const paginatedPosts = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return filteredPosts.value.slice(start, end);
+watch([currentCategory, currentPage], () => {
+    fetchPosts();
 });
 
 const totalPages = computed(() => {
-    return Math.ceil(filteredPosts.value.length / itemsPerPage);
+    return Math.ceil(totalPosts.value / itemsPerPage);
 });
 
 const changePage = (page) => {
@@ -101,10 +90,12 @@ const changePage = (page) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const setCategory = (cat) => {
-    currentCategory.value = cat;
+const setCategory = (category_name) => {
+    currentCategory.value = category_name;
     currentPage.value = 1; 
 };
+const paginatedPosts = computed(() => posts.value);
+const filteredPosts = computed(() => posts.value);
 </script>
 
 <template>
@@ -189,18 +180,28 @@ const setCategory = (cat) => {
                     </div>
                     <div class="best-list-wrap">
                          <div>
-                            <div class="best-row"><span class="rank-no top">1</span><span class="best-txt">강아지가 밥을 안 먹을 때 꿀팁 (경험담)</span><span class="cmt-cnt">[12]</span></div>
-                            <div class="best-row"><span class="rank-no top">2</span><span class="best-txt">고양이 젤리 색깔 바뀌는 거 정상인가요?</span><span class="cmt-cnt">[8]</span></div>
-                            <div class="best-row"><span class="rank-no top">3</span><span class="best-txt">산책하다가 진드기 물렸어요 ㅠㅠ 대처법</span><span class="cmt-cnt">[24]</span></div>
-                            <div class="best-row"><span class="rank-no">4</span><span class="best-txt">우리 댕댕이 미용 망했어요... (사진주의)</span><span class="cmt-cnt">[31]</span></div>
-                            <div class="best-row"><span class="rank-no">5</span><span class="best-txt">대전 24시 동물병원 괜찮은 곳 추천좀요</span><span class="cmt-cnt">[5]</span></div>
+                            <div 
+                                v-for="(post, index) in popularPosts.slice(0, 5)" 
+                                :key="post.id" 
+                                class="best-row"
+                                @click="router.push(`/community/post/${post.id}`)"
+                            >
+                                <span class="rank-no" :class="{ top: index < 3 }">{{ index + 1 }}</span>
+                                <span class="best-txt">{{ post.title }}</span>
+                                <span class="cmt-cnt" v-if="post.commentCount">[{{ post.commentCount }}]</span>
+                            </div>
                         </div>
                         <div>
-                            <div class="best-row"><span class="rank-no">6</span><span class="best-txt">자동 급식기 vs 그냥 밥그릇 뭐 쓰세요?</span><span class="cmt-cnt">[15]</span></div>
-                            <div class="best-row"><span class="rank-no">7</span><span class="best-txt">초보 집사가 꼭 알아야 할 예방접종 리스트</span><span class="cmt-cnt">[42]</span></div>
-                            <div class="best-row"><span class="rank-no">8</span><span class="best-txt">펫보험 가입하신 분들 만족하시나요?</span><span class="cmt-cnt">[9]</span></div>
-                            <div class="best-row"><span class="rank-no">9</span><span class="best-txt">강아지 슬개골 탈구 수술 비용 공유해요</span><span class="cmt-cnt">[11]</span></div>
-                            <div class="best-row"><span class="rank-no">10</span><span class="best-txt">고양이 모래 전체갈이 주기 언제가 좋나요</span><span class="cmt-cnt">[6]</span></div>
+                            <div 
+                                v-for="(post, index) in popularPosts.slice(5, 10)" 
+                                :key="post.id" 
+                                class="best-row"
+                                @click="router.push(`/community/post/${post.id}`)"
+                            >
+                                <span class="rank-no">{{ index + 6 }}</span>
+                                <span class="best-txt">{{ post.title }}</span>
+                                <span class="cmt-cnt" v-if="post.commentCount">[{{ post.commentCount }}]</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -232,7 +233,7 @@ const setCategory = (cat) => {
                     </thead>
                     <tbody>
                         <tr v-for="(post, index) in paginatedPosts" :key="post.id">
-                            <td>{{ filteredPosts.length - ((currentPage - 1) * itemsPerPage) - index }}</td>
+                            <td>{{ totalPosts - ((currentPage - 1) * itemsPerPage) - index }}</td>
                             <td><span class="cat-badge">{{ post.categoryName }}</span></td>
                             <td class="td-title">
                                 <div class="post-link" @click="router.push(`/community/post/${post.id}`)">
