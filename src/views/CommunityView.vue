@@ -1,18 +1,58 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user'; 
+import { boardApi } from '@/api/board';
+import BoardSideBar from '@/components/BoardSideBar.vue';
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 
 const posts = ref([]);
+const popularPosts = ref([]);
 const currentCategory = ref('all'); 
+const totalPosts = ref(0);
+const isLoading = ref(false);
 
-// ✅ 10개씩 보기 설정
 const currentPage = ref(1);
 const itemsPerPage = 10; 
+
+const fetchPopularPosts = async () => {
+    try {
+        const response = await boardApi.getPopularPosts();
+        popularPosts.value = response.data;
+    } catch (error) {
+        console.error('Failed to fetch popular posts:', error);
+    }
+};
+
+const fetchPosts = async () => {
+    isLoading.value = true;
+    try {
+        const params = {
+            page: currentPage.value,
+        };
+
+        if (currentCategory.value === 'hot') {
+            params.type = 'hot';
+        } else if (currentCategory.value === 'my-posts') {
+            params.type = 'my-posts';
+        } else if (currentCategory.value === 'liked-posts') {
+            params.type = 'liked-posts';
+        } else if (currentCategory.value !== 'all') {
+            params.category = currentCategory.value;
+        }
+
+        const response = await boardApi.getPosts(params);
+        posts.value = response.data.results;
+        totalPosts.value = response.data.count;
+    } catch (error) {
+        console.error('Failed to fetch posts:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
 
 const goWrite = () => {
     if (!userStore.isLogin) {
@@ -23,41 +63,7 @@ const goWrite = () => {
     router.push('/community/write');
 };
 
-// ✅ 초기 데이터
-const initialData = [
-    { id: 4224, category: 'qna', categoryName: '질문', title: '강아지가 산책 중 풀을 뜯어먹는데 괜찮나요?', author: '풀밭위의견', date: '15:10', views: 12, isNew: true, isLiked: true },
-    { id: 4223, category: 'free', categoryName: '자유', title: '퇴근하고 집에 오니 휴지 파티가 열렸네요 ^^...', author: '해탈한집사', date: '14:55', views: 45, isNew: true, isLiked: false },
-    { id: 4222, category: 'info', categoryName: '정보', title: '고양이 음수량 늘리는 확실한 방법 (습식 추천)', author: '물먹는하마', date: '14:40', views: 88, isNew: true, isLiked: true },
-    { id: 4221, category: 'free', categoryName: '자유', title: '주말에 펫페어 가시는 분 계신가요?', author: '쇼핑중독', date: '14:30', views: 102, isNew: false },
-    { id: 4220, category: 'qna', categoryName: '질문', title: '사료를 바꿨는데 눈물이 터졌어요 ㅠㅠ', author: '눈물자국', date: '14:25', views: 67, isNew: false },
-    { id: 4219, category: 'info', categoryName: '정보', title: '반려견 동반 가능한 서울 근교 카페 리스트', author: '카페투어', date: '14:22', views: 310, isNew: false },
-    { id: 4218, category: 'free', categoryName: '자유', title: '미용 맡겼는데 곰돌이 컷 너무 귀여워요 (사진)', author: '곰돌이맘', date: '14:20', views: 150, isNew: false },
-    { id: 4217, category: 'qna', categoryName: '질문', title: '중성화 수술 후 넥카라 언제까지 해야 하나요?', author: '걱정인형', date: '14:15', views: 95, isNew: false },
-    { id: 4216, category: 'info', categoryName: '정보', title: '강아지 등록제 인식칩 내장형 vs 외장형 장단점', author: '칩박사', date: '14:10', views: 205, isNew: false },
-    { id: 4215, category: 'qna', categoryName: '질문', title: '저희 강아지가 갑자기 산책을 거부하는데 왜 그럴까요? ㅠㅠ', author: '초보집사', date: '14:05', views: 89, isNew: false },
-    { id: 4214, category: 'info', categoryName: '정보', title: '겨울철 강아지 발바닥 관리 꿀팁 정리해봤어요', author: '멍멍박사', date: '13:50', views: 245, isNew: false },
-    { id: 4213, category: 'free', categoryName: '자유', title: '오늘 날씨 너무 좋아서 한강 다녀왔어요! (사진)', author: '산책왕', date: '12:10', views: 112, isNew: false },
-    { id: 4212, category: 'info', categoryName: '정보', title: '서울 XX동물병원 스케일링 비용 정보 공유해요', author: '건강이최고', date: '11:45', views: 330, isNew: false },
-    { id: 4210, category: 'free', categoryName: '자유', title: '냥줍했어요... 이름 추천 받습니다 (치즈냥)', author: '냥냥펀치', date: '10:55', views: 890, isNew: false },
-    { id: 4209, category: 'free', categoryName: '자유', title: '강아지 옷 샀는데 사이즈 실패했어요 나눔합니다', author: '천사견', date: '10:10', views: 55, isNew: false },
-];
-
 onMounted(() => {
-    const saved = localStorage.getItem('community-posts');
-    
-    if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.length < 5) {
-            posts.value = initialData;
-            localStorage.setItem('community-posts', JSON.stringify(initialData));
-        } else {
-            posts.value = parsed;
-        }
-    } else {
-        posts.value = initialData;
-        localStorage.setItem('community-posts', JSON.stringify(initialData));
-    }
-
     if (route.query.category) {
         currentCategory.value = route.query.category;
     }
@@ -66,33 +72,17 @@ onMounted(() => {
         if (route.query.sort === 'popular') currentCategory.value = 'hot';
         else if (route.query.sort === 'latest') currentCategory.value = 'all';
     }
+
+    fetchPosts();
+    fetchPopularPosts();
 });
 
-// ✅ 필터링 로직
-const filteredPosts = computed(() => {
-    let result = [];
-    if (currentCategory.value === 'all') {
-        result = posts.value;
-    } else if (currentCategory.value === 'hot') {
-        result = posts.value.filter(p => p.views >= 100).sort((a,b) => b.views - a.views);
-    } else if (currentCategory.value === 'my-posts') {
-        result = posts.value.filter(p => p.author === userStore.user?.nickname);
-    } else if (currentCategory.value === 'liked-posts') {
-        result = posts.value.filter(p => p.isLiked === true);
-    } else {
-        result = posts.value.filter(p => p.category === currentCategory.value);
-    }
-    return result;
-});
-
-const paginatedPosts = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return filteredPosts.value.slice(start, end);
+watch([currentCategory, currentPage], () => {
+    fetchPosts();
 });
 
 const totalPages = computed(() => {
-    return Math.ceil(filteredPosts.value.length / itemsPerPage);
+    return Math.ceil(totalPosts.value / itemsPerPage);
 });
 
 const changePage = (page) => {
@@ -101,82 +91,19 @@ const changePage = (page) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const setCategory = (cat) => {
-    currentCategory.value = cat;
+const setCategory = (category_name) => {
+    currentCategory.value = category_name;
     currentPage.value = 1; 
 };
+const paginatedPosts = computed(() => posts.value);
+const filteredPosts = computed(() => posts.value);
 </script>
 
 <template>
   <div class="community-page">
     <div class="container layout-grid">
         
-        <aside class="sidebar">
-            <div class="login-card">
-                <template v-if="userStore.isLogin && userStore.user">
-                    <div 
-                        class="profile-thumb" 
-                        :style="{ backgroundImage: `url(${userStore.user.profileImg})` }"
-                        @click="router.push('/my-profile')"
-                    ></div>
-                    <p class="login-msg welcome-text">
-                        <span style="font-size: 20px;">👋</span> 반가워요!<br>
-                        <span style="color:#F57F17; font-weight:800">{{ userStore.user.nickname }}</span>님 🐾
-                    </p>
-                    
-                    <div class="user-activities">
-                        <div 
-                            class="activity-link" 
-                            :class="{ active: currentCategory === 'my-posts' }"
-                            @click="setCategory('my-posts')"
-                        >
-                            <span class="material-icons-round">article</span> 내가 쓴 글
-                        </div>
-                        <div 
-                            class="activity-link" 
-                            :class="{ active: currentCategory === 'liked-posts' }"
-                            @click="setCategory('liked-posts')"
-                        >
-                            <span class="material-icons-round">favorite_border</span> 내가 좋아요한 글
-                        </div>
-                    </div>
-
-                </template>
-                <template v-else>
-                    <div style="font-size:32px; margin-bottom:8px;">👋</div>
-                    <p class="login-msg">로그인하고<br>집사들과 소통해보세요!</p>
-                    <button class="btn-login" @click="router.push('/login')">로그인 / 회원가입</button>
-                </template>
-            </div>
-
-            <div class="menu-group">
-                <div class="menu-head">
-                    <span v-if="userStore.isLogin && userStore.user">
-                        {{ userStore.user.nickname }}님의 게시판
-                    </span>
-                    <span v-else>
-                        게시판
-                    </span>
-                </div>
-                <ul class="menu-list">
-                    <li :class="{ active: currentCategory === 'all' }" @click="setCategory('all')">
-                        <span class="material-icons-round menu-icon">format_list_bulleted</span> 전체글
-                    </li>
-                    <li :class="{ active: currentCategory === 'hot' }" @click="setCategory('hot')">
-                        <span class="material-icons-round menu-icon">local_fire_department</span> 인기글 <span class="hot-badge">HOT</span>
-                    </li>
-                    <li :class="{ active: currentCategory === 'free' }" @click="setCategory('free')">
-                        <span class="material-icons-round menu-icon">chat_bubble_outline</span> 자유 수다
-                    </li>
-                    <li :class="{ active: currentCategory === 'qna' }" @click="setCategory('qna')">
-                        <span class="material-icons-round menu-icon">help_outline</span> 질문/답변
-                    </li>
-                    <li :class="{ active: currentCategory === 'info' }" @click="setCategory('info')">
-                        <span class="material-icons-round menu-icon">tips_and_updates</span> 정보 공유
-                    </li>
-                </ul>
-            </div>
-        </aside>
+        <BoardSideBar :currentCategory="currentCategory" @category-change="setCategory" />
 
         <main class="main-content">
             <div class="top-section" v-if="currentCategory === 'all' && currentPage === 1">
@@ -189,18 +116,28 @@ const setCategory = (cat) => {
                     </div>
                     <div class="best-list-wrap">
                          <div>
-                            <div class="best-row"><span class="rank-no top">1</span><span class="best-txt">강아지가 밥을 안 먹을 때 꿀팁 (경험담)</span><span class="cmt-cnt">[12]</span></div>
-                            <div class="best-row"><span class="rank-no top">2</span><span class="best-txt">고양이 젤리 색깔 바뀌는 거 정상인가요?</span><span class="cmt-cnt">[8]</span></div>
-                            <div class="best-row"><span class="rank-no top">3</span><span class="best-txt">산책하다가 진드기 물렸어요 ㅠㅠ 대처법</span><span class="cmt-cnt">[24]</span></div>
-                            <div class="best-row"><span class="rank-no">4</span><span class="best-txt">우리 댕댕이 미용 망했어요... (사진주의)</span><span class="cmt-cnt">[31]</span></div>
-                            <div class="best-row"><span class="rank-no">5</span><span class="best-txt">대전 24시 동물병원 괜찮은 곳 추천좀요</span><span class="cmt-cnt">[5]</span></div>
+                            <div 
+                                v-for="(post, index) in popularPosts.slice(0, 5)" 
+                                :key="post.id" 
+                                class="best-row"
+                                @click="router.push(`/community/post/${post.id}`)"
+                            >
+                                <span class="rank-no" :class="{ top: index < 3 }">{{ index + 1 }}</span>
+                                <span class="best-txt">{{ post.title }}</span>
+                                <span class="cmt-cnt" v-if="post.commentCount">[{{ post.commentCount }}]</span>
+                            </div>
                         </div>
                         <div>
-                            <div class="best-row"><span class="rank-no">6</span><span class="best-txt">자동 급식기 vs 그냥 밥그릇 뭐 쓰세요?</span><span class="cmt-cnt">[15]</span></div>
-                            <div class="best-row"><span class="rank-no">7</span><span class="best-txt">초보 집사가 꼭 알아야 할 예방접종 리스트</span><span class="cmt-cnt">[42]</span></div>
-                            <div class="best-row"><span class="rank-no">8</span><span class="best-txt">펫보험 가입하신 분들 만족하시나요?</span><span class="cmt-cnt">[9]</span></div>
-                            <div class="best-row"><span class="rank-no">9</span><span class="best-txt">강아지 슬개골 탈구 수술 비용 공유해요</span><span class="cmt-cnt">[11]</span></div>
-                            <div class="best-row"><span class="rank-no">10</span><span class="best-txt">고양이 모래 전체갈이 주기 언제가 좋나요</span><span class="cmt-cnt">[6]</span></div>
+                            <div 
+                                v-for="(post, index) in popularPosts.slice(5, 10)" 
+                                :key="post.id" 
+                                class="best-row"
+                                @click="router.push(`/community/post/${post.id}`)"
+                            >
+                                <span class="rank-no">{{ index + 6 }}</span>
+                                <span class="best-txt">{{ post.title }}</span>
+                                <span class="cmt-cnt" v-if="post.commentCount">[{{ post.commentCount }}]</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -232,7 +169,7 @@ const setCategory = (cat) => {
                     </thead>
                     <tbody>
                         <tr v-for="(post, index) in paginatedPosts" :key="post.id">
-                            <td>{{ filteredPosts.length - ((currentPage - 1) * itemsPerPage) - index }}</td>
+                            <td>{{ totalPosts - ((currentPage - 1) * itemsPerPage) - index }}</td>
                             <td><span class="cat-badge">{{ post.categoryName }}</span></td>
                             <td class="td-title">
                                 <div class="post-link" @click="router.push(`/community/post/${post.id}`)">
@@ -278,28 +215,11 @@ const setCategory = (cat) => {
 
 <style scoped>
 /* 기존 스타일 그대로 유지 */
-.profile-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background-color: #EEE; border: 3px solid #FFD54F; margin: 0 auto 12px; background-size: cover; background-position: center; cursor: pointer; }
-.welcome-text { margin-bottom: 20px !important; }
-.btn-login { display: block; width: 100%; padding: 12px; background: var(--primary-honey); color: white; font-weight: 800; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
-.btn-login:hover { background: var(--primary-deep); }
-.user-activities { border-top: 1px dashed var(--line-border); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
-.activity-link { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-body); font-weight: 600; padding: 4px 8px; border-radius: 6px; transition: 0.2s; cursor: pointer; }
-.activity-link:hover, .activity-link.active { background: #FFFDE7; color: var(--primary-deep); }
-.activity-link .material-icons-round { font-size: 18px; color: #FFB300; }
 .community-page { --bg-base: #FDFCF8; --bg-white: #FFFFFF; --primary-honey: #FFD54F; --primary-deep: #FFC107; --accent-butter: #FFFDE7; --text-title: #4A3F35; --text-body: #5D5D5D; --text-caption: #999999; --line-border: #EAEAEA; --radius-lg: 20px; background-color: var(--bg-base); min-height: 100vh; color: var(--text-title); font-family: 'NanumSquareRound', sans-serif; padding-top: 40px; }
 a { text-decoration: none; color: inherit; }
 ul { list-style: none; padding: 0; margin: 0; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
 .layout-grid { display: flex; gap: 40px; padding-bottom: 100px; }
-.sidebar { width: 220px; flex-shrink: 0; }
-.login-card { background: white; padding: 24px 20px; border: 1px solid var(--line-border); border-radius: var(--radius-lg); text-align: center; margin-bottom: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-.login-msg { font-size: 14px; color: var(--text-body); margin-bottom: 16px; font-weight: 700; }
-.menu-group { margin-bottom: 32px; }
-.menu-head { font-size: 13px; font-weight: 800; color: #CCC; margin-bottom: 12px; padding-left: 12px; }
-.menu-list li { padding: 12px 16px; font-size: 15px; font-weight: 700; color: var(--text-body); border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-.menu-list li:hover { background: var(--accent-butter); color: #F57F17; }
-.menu-list li.active { background: var(--accent-butter); color: #F57F17; font-weight: 800; }
-.hot-badge { background: #FF5252; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
 .main-content { flex: 1; min-width: 0; }
 .top-section { display: flex; gap: 24px; margin-bottom: 20px; }
 .best-container { flex: 2; background: white; border: 1px solid var(--line-border); border-radius: var(--radius-lg); padding: 24px; display: flex; flex-direction: column; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
@@ -340,10 +260,6 @@ ul { list-style: none; padding: 0; margin: 0; }
 @media (max-width: 1024px) {
     .container { padding: 0 20px; }
     .layout-grid { flex-direction: column; gap: 20px; } /* 사이드바를 위로 올림 */
-    .sidebar { width: 100%; }
-    .menu-list { display: flex; flex-wrap: wrap; gap: 8px; } /* 메뉴를 가로로 배치 */
-    .menu-list li { flex: 1; min-width: 100px; justify-content: center; }
-    .login-card { margin-bottom: 16px; }
 }
 
 @media (max-width: 768px) {
