@@ -4,7 +4,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user'; // ✅ 사용자 정보 스토어 임포트
 import DiagnosisCard from '@/components/DiagnosisCard.vue'; 
 import AISidebar from '@/components/AISidebar.vue';
-import { useUserStore } from '@/stores/user';
 import api from '@/api';
 import { marked } from 'marked';
 const router = useRouter();
