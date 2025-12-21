@@ -1,9 +1,9 @@
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'; // onMounted 추가
-import { useRouter, useRoute } from 'vue-router'; // useRoute 추가
+import { ref, nextTick, onMounted, computed } from 'vue'; 
+import { useRouter, useRoute } from 'vue-router'; 
+import { useUserStore } from '@/stores/user'; // ✅ 사용자 정보 스토어 임포트
 import DiagnosisCard from '@/components/DiagnosisCard.vue'; 
 import AISidebar from '@/components/AISidebar.vue';
-import { useUserStore } from '@/stores/user';
 import api from '@/api';
 import { marked } from 'marked';
 const router = useRouter();
@@ -19,14 +19,13 @@ const chatContentRef = ref(null);
 const currentSessionId = ref(null);
 const sidebarRef = ref(null);
 
-// ✅ [기능 추가] 페이지가 열릴 때 메인에서 보낸 데이터 확인
+// 페이지 진입 시 로직
 onMounted(() => {
     window.scrollTo(0, 0);
 
-    // 주소창에 ?symptom=... 데이터가 있다면?
     if (route.query.symptom) {
-        userInput.value = route.query.symptom; // 입력창에 값 채우기
-        sendMessage(); // 바로 분석 시작
+        userInput.value = route.query.symptom; 
+        sendMessage(); 
     }
 });
 
@@ -133,8 +132,12 @@ const scrollToBottom = async () => {
 };
 
 const clickSuggestion = (text) => {
-    userInput.value = text;
-    sendMessage();
+    if (text.includes('사진')) {
+        triggerFileInput();
+    } else {
+        userInput.value = text;
+        sendMessage();
+    }
 };
 
 const renderMarkdown = (text) => {
@@ -161,7 +164,7 @@ const renderMarkdown = (text) => {
             <h2 class="welcome-title">어디가 불편한가요?<br>사진이나 증상을 알려주세요.</h2>
 
             <div class="suggestion-grid">
-                <div class="suggestion-card" @click="clickSuggestion('상처 부위 사진을 올릴게요')">
+                <div class="suggestion-card" @click="clickSuggestion('사진을 업로드할게요')">
                     <div class="sug-title">📷 사진으로 진단하기</div>
                     <div class="sug-desc">상처 부위나 눈, 피부 사진을 찍어 올려주세요.</div>
                 </div>
@@ -202,6 +205,11 @@ const renderMarkdown = (text) => {
 
         <div class="input-area">
             <div class="input-container">
+                <input type="file" ref="fileInputRef" style="display: none" accept="image/*" @change="handleImageUpload">
+                <button class="btn-attach" @click="triggerFileInput" title="사진 업로드">
+                    <span class="material-icons-round">add_photo_alternate</span>
+                </button>
+                
                 <input type="text" class="chat-input" v-model="userInput" @keyup.enter="sendMessage" placeholder="증상을 입력하세요...">
                 <button class="btn-send" @click="sendMessage">⬆</button>
             </div>
@@ -211,23 +219,34 @@ const renderMarkdown = (text) => {
 </template>
 
 <style scoped>
-/* 기존 스타일 그대로 유지 */
+/* 레이아웃 구성 */
 .ai-container { display: flex; height: 100vh; overflow: hidden; color: #333; }
 .chat-main { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
 .chat-content { flex: 1; overflow-y: auto; padding: 20px 40px 100px; }
+
+/* 메시지 버블 스타일 */
 .msg-row { display: flex; margin-bottom: 20px; }
 .msg-row.user { justify-content: flex-end; }
-.msg-bubble { padding: 10px 16px; border-radius: 12px; max-width: 70%; background: #eee; }
-.msg-row.user .msg-bubble { background: #FFD54F; color: #fff; }
+.msg-bubble { padding: 10px 16px; border-radius: 12px; max-width: 70%; background: #eee; overflow: hidden; }
+.msg-row.user .msg-bubble { background: #FFD54F; color: #4A3F35; font-weight: 500; }
+.msg-img { max-width: 100%; max-height: 300px; border-radius: 8px; display: block; }
+
+/* 하단 입력창 */
 .input-area { position: absolute; bottom: 0; width: 100%; padding: 20px; background: white; }
-.input-container { display: flex; gap: 10px; border: 1px solid #ddd; padding: 10px; border-radius: 20px; }
-.chat-input { flex: 1; border: none; outline: none; }
+.input-container { display: flex; gap: 10px; border: 1px solid #ddd; padding: 8px 15px; border-radius: 25px; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.chat-input { flex: 1; border: none; outline: none; font-size: 15px; }
+
+/* 버튼 스타일 */
+.btn-attach { background: none; border: none; cursor: pointer; color: #9CA3AF; display: flex; align-items: center; transition: color 0.2s; }
+.btn-attach:hover { color: #FFD54F; }
+.btn-send { width: 36px; height: 36px; border-radius: 50%; background: #FFD54F; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* 웰컴 스크린 */
 .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 100px; }
 .welcome-logo-area { width: 80px; height: 80px; background: #FFD54F; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: 0 10px 20px rgba(255, 213, 79, 0.3); }
 .welcome-icon { font-size: 40px; color: white; }
 .welcome-title { font-size: 24px; font-weight: 800; margin-bottom: 40px; text-align: center; }
 
-/* 그리드 레이아웃 */
 .suggestion-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 700px; width: 100%; padding: 0 20px; }
 .suggestion-card { border: 1px solid #E5E7EB; border-radius: 20px; padding: 16px 20px; cursor: pointer; transition: 0.2s; background: white; }
 .suggestion-card:hover { border-color: #FFD54F; background: #FFFDE7; transform: translateY(-2px); }
