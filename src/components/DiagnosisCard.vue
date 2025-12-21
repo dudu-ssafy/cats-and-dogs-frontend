@@ -57,6 +57,9 @@ defineProps({
 </template>
 
 <style scoped>
+
+
+
 .diagnosis-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #E5E7EB; border-radius: 16px; overflow: hidden; width: 100%; max-width: 500px; margin-top: 10px; }
 
 .card-header { padding: 20px; background: #FFFDE7; border-bottom: 1px solid #F0F0F0; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -88,4 +91,85 @@ defineProps({
 .btn-action { flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; border: none; display: flex; justify-content: center; align-items: center; gap: 6px; }
 .btn-action.primary { background: #111827; color: white; }
 .btn-action.secondary { background: white; border: 1px solid #E5E7EB; color: #111827; }
+
+/* ============================================================
+   1. Structure (구조: 여백과 배치)
+   ============================================================ */
+
+/* 메시지 행 공통 구조 */
+.msg-row {
+  display: flex;
+  margin-bottom: 24px;
+}
+
+/* 마크다운 컨테이너 구조 */
+.markdown-body {
+  line-height: 1.7; /* 줄 간격을 넓혀 가독성 향상 */
+  word-break: break-all;
+}
+
+.markdown-body :deep(h3) {
+  margin: 20px 0 10px;
+  padding-bottom: 4px;
+}
+
+.markdown-body :deep(p) {
+  margin-bottom: 12px;
+}
+
+.markdown-body :deep(ul), .markdown-body :deep(ol) {
+  padding-left: 1.5rem;
+  margin-bottom: 16px;
+}
+
+/* ============================================================
+   2. Skin (피부: 색상, 폰트 무게, 디테일)
+   ============================================================ */
+
+/* AI 응답 버블 피부 (눈이 편안한 오프화이트/그레이) */
+.ai .msg-bubble {
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  color: #374151; /* 짙은 차콜색으로 눈의 피로도 감소 */
+  font-size: 15px; /* 표준보다 약간 작게 하여 세련된 느낌 */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* 마크다운 내부 타이틀 (고급스러운 다크 그레이) */
+.markdown-body :deep(h3) {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 2px solid #FEF3C7; /* 강조 포인트: 은은한 노랑 밑줄 */
+}
+
+/* 강조 텍스트 (쨍한 노랑 대신 부드러운 하이라이트) */
+.markdown-body :deep(strong) {
+  color: #92400E;
+  background: rgba(255, 213, 79, 0.2); /* 투명도를 준 은은한 노랑 */
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* 리스트 항목 스타일 */
+.markdown-body :deep(li) {
+  color: #4B5563;
+}
+
+/* 주의사항/인용구 스타일 */
+.markdown-body :deep(blockquote) {
+  background-color: #F0F9FF; /* 시원한 연하늘색 */
+  border-left: 4px solid #3B82F6;
+  color: #1E40AF;
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-style: normal;
+}
+
+/* 구분선 */
+.markdown-body :deep(hr) {
+  border: 0;
+  border-top: 1px solid #E5E7EB;
+  margin: 20px 0;
+}
 </style>

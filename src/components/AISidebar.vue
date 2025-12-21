@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue'; // watch 추가
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import api from '@/api';
@@ -18,6 +18,28 @@ const userStore = useUserStore();
 const historyList = ref([]);
 const goHome = () => router.push('/');
 
+// ✅ [디버깅 & 연동 로직] 
+const userProfileImg = computed(() => {
+    // 1. 데이터가 어떻게 들어오는지 브라우저 콘솔(F12)에서 확인하기 위함
+    console.log("현재 스토어의 유저 정보:", userStore.user);
+
+    const imgPath = userStore.user?.profileImg || userStore.user?.profile_img || userStore.user?.image;
+    
+    if (!imgPath) {
+        return 'https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80';
+    }
+
+    if (imgPath.startsWith('http')) {
+        return imgPath;
+    }
+    
+    // 2. 경로가 '/media/'로 시작하는지 확인하고 서버 주소 붙이기
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    // 경로 앞에 /가 중복되지 않게 처리
+    const cleanPath = imgPath.startsWith('/') ? imgPath : `/${imgPath}`;
+    return `${baseUrl}${cleanPath}`;
+});
+
 const fetchHistory = async () => {
     try {
         const response = await api.get('chats/');
@@ -35,7 +57,11 @@ const selectSession = (sessionId) => {
     emit('select-session', sessionId);
 };
 
-onMounted(() => {
+onMounted(async () => {
+    // 유저 정보가 아예 없는 경우 다시 한번 시도
+    if (!userStore.user && typeof userStore.fetchUser === 'function') {
+        await userStore.fetchUser();
+    }
     fetchHistory();
 });
 
@@ -46,70 +72,61 @@ defineExpose({
 
 <template>
     <aside class="ai-sidebar">
-        <div class="sidebar-logo" @click="goHome">
-            <span class="material-icons-round logo-icon">pets</span>
-            <span class="logo-text">함께하개냥</span>
-        </div>
-        
         <div class="sidebar-header">
-            <div class="user-avatar" :style="{ backgroundImage: 'url(' + (userStore.user?.profileImg || 'https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80') + ')' }"></div>
-            <span class="user-name">{{ userStore.user?.username || '집사' }}님</span>
+            <div class="user-avatar" :style="{ backgroundImage: `url('${userProfileImg}')` }"></div>
+            <span class="user-name">{{ userStore.user?.username || userStore.user?.nickname || '집사' }}님</span>
         </div>
 
-        <button class="btn-new-chat" @click="handleNewChat">
-            <span class="material-icons-round" style="color:var(--primary-honey)">add</span>
-            새로운 진단 시작
-        </button>
+        <div class="sidebar-content">
+            <button class="btn-new-chat" @click="handleNewChat">
+                <span class="material-icons-round" style="color:var(--primary-honey)">add</span>
+                새로운 진단 시작
+            </button>
 
-        <ul class="history-list">
-            <li 
-                v-for="h in historyList" 
-                :key="h.id" 
-                class="history-item"
-                :class="{ active: currentSessionId === h.id }"
-                @click="selectSession(h.id)"
-            >
-                <span class="material-icons-round history-icon">history</span> 
-                <span class="history-title">{{ h.title || '진단 기록' }}</span>
-            </li>
-        </ul>
+            <ul class="history-list">
+                <li 
+                    v-for="h in historyList" 
+                    :key="h.id" 
+                    class="history-item"
+                    :class="{ active: currentSessionId === h.id }"
+                    @click="selectSession(h.id)"
+                >
+                    <span class="material-icons-round history-icon">history</span> 
+                    <span class="history-title">{{ h.title || '진단 기록' }}</span>
+                </li>
+            </ul>
+        </div>
     </aside>
 </template>
 
 <style scoped>
+/* 디자인 절대 수정 금지 - 사용자님 선 맞춤 스타일 유지 */
 .ai-sidebar { 
     width: 260px; 
     background: #F9FAFB; 
-    padding: 20px; 
+    padding: 0; 
     border-right: 1px solid #eee; 
     display: flex; 
     flex-direction: column; 
     height: 100%;
 }
 
-.sidebar-logo { 
-    display: flex; 
-    align-items: center; 
-    gap: 6px; 
-    font-size: 20px; 
-    font-weight: 800; 
-    color: #4A3F35; 
-    margin-bottom: 30px; 
-    cursor: pointer; 
-}
-
-.logo-icon { 
-    color: #FFD54F; 
-    font-size: 24px; 
-}
-
 .sidebar-header { 
     display: flex; 
     align-items: center; 
     gap: 10px; 
-    margin-bottom: 24px; 
-    padding-bottom: 20px; 
+    height: 60px; 
+    padding: 0 20px;
     border-bottom: 1px solid #E5E7EB; 
+    box-sizing: border-box;
+}
+
+.sidebar-content {
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
 }
 
 .user-avatar { 
@@ -191,6 +208,5 @@ defineExpose({
     white-space: nowrap;
 }
 
-/* Material Icons for fallback */
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons+Round');
 </style>

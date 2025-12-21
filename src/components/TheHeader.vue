@@ -52,15 +52,15 @@ const goToProfileOrLogin = () => {
     <div class="l-header-inner l-container">
       <router-link to="/" class="c-logo o-flex-center">
         <span class="material-icons-round c-logo__icon">pets</span>
-        <span class="c-logo__text u-fw-bold">함께하개<span class="c-logo__highlight">냥</span></span>
+        <span class="c-logo__text u-logo-font">함께하개<span class="c-logo__highlight">냥</span></span>
       </router-link>
 
       <nav class="c-nav">
         <ul class="l-nav-list o-flex-center">
-          <li><router-link to="/ai" class="c-nav-item u-fw-bold">AI 진단</router-link></li>
-          <li><router-link to="/shorts" class="c-nav-item u-fw-bold">쇼츠</router-link></li>
-          <li><router-link to="/community" class="c-nav-item u-fw-bold">커뮤니티</router-link></li>
-          <li><router-link to="/shop" class="c-nav-item u-fw-bold">상점</router-link></li>
+          <li><router-link to="/ai" class="c-nav-item">AI 진단</router-link></li>
+          <li><router-link to="/shorts" class="c-nav-item">쇼츠</router-link></li>
+          <li><router-link to="/community" class="c-nav-item">커뮤니티</router-link></li>
+          <li><router-link to="/shop" class="c-nav-item">상점</router-link></li>
         </ul>
       </nav>
 
@@ -77,14 +77,14 @@ const goToProfileOrLogin = () => {
         </button>
 
         <template v-if="!userStore.isLogin">
-             <router-link to="/login" class="c-btn c-btn--primary-round u-fw-bold">로그인</router-link>
+             <router-link to="/login" class="c-btn c-btn--primary-round">로그인</router-link>
         </template>
         
         <template v-else>
             <button class="c-btn-icon" @click="goToProfileOrLogin">
                 <span class="material-icons-round">person</span>
             </button>
-            <button class="c-btn c-btn--primary-round u-fw-bold" @click="userStore.logout">로그아웃</button>
+            <button class="c-btn c-btn--primary-round" @click="userStore.logout">로그아웃</button>
         </template>
       </div>
     </div>
@@ -121,6 +121,10 @@ const goToProfileOrLogin = () => {
 </template>
 
 <style scoped>
+/* ✅ 폰트 임포트: UI용(나눔스퀘어라운드) & 로고용(동글) */
+@import url('https://fonts.googleapis.com/css2?family=Dongle:wght@700&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquareRound@1.0/nanumsquareround.css');
+
 /* ============================================================
    1. Objects (Layout: l-, o-)
    ============================================================ */
@@ -164,6 +168,9 @@ const goToProfileOrLogin = () => {
   position: sticky; top: 0; z-index: 1000;
   box-shadow: 0 1px 10px rgba(0,0,0,0.03);
   transition: transform 0.3s ease;
+
+  /* ✅ UI 기본 폰트 (나눔스퀘어라운드) */
+  font-family: 'NanumSquareRound', sans-serif;
 }
 
 .c-search-overlay {
@@ -183,8 +190,6 @@ const goToProfileOrLogin = () => {
     padding: 40px;
     position: relative;
     box-shadow: 0 15px 40px rgba(0,0,0,0.12);
-    transform: translateY(0);
-    transition: transform 0.3s ease;
 }
 
 .c-search-modal__close {
@@ -192,7 +197,6 @@ const goToProfileOrLogin = () => {
     background: none; border: none; cursor: pointer;
     color: #CCC; font-size: 24px;
 }
-.c-search-modal__close:hover { color: #4A3F35; }
 
 .c-search-field {
     display: flex; align-items: center;
@@ -208,30 +212,35 @@ const goToProfileOrLogin = () => {
 .c-search-field__btn { background: none; border: none; cursor: pointer; color: #FFD54F; }
 .c-search-field__btn span { font-size: 32px; }
 
-.c-search-modal__hint { font-size: 14px; color: #999; text-align: left; }
-
 .is-ai-mode { position: fixed; transform: translateY(-100%); }
 .is-visible { transform: translateY(0); }
 .hover-trigger { position: fixed; top: 0; width: 100%; height: 20px; z-index: 2000; }
 
-.c-logo { text-decoration: none; color: #4A3F35; gap: 8px; flex-shrink: 0; }
-.c-logo__icon { color: var(--h-primary); font-size: clamp(24px, 3vw, 32px); }
-.c-logo__text { font-size: clamp(18px, 2.5vw, 28px); white-space: nowrap; }
+/* ✅ 로고 영역 간격 수정 (gap 4px -> 1px) */
+.c-logo { text-decoration: none; color: #4A3F35; gap: 1px; flex-shrink: 0; }
+.c-logo__icon { color: var(--h-primary); font-size: clamp(24px, 3.2vw, 34px); }
+.c-logo__text { 
+    /* ✅ 로고만 동글동글한 전용 폰트 적용 */
+    font-family: 'Dongle', sans-serif;
+    font-size: clamp(34px, 4.5vw, 42px); /* 동글 폰트는 크기를 키워야 예쁩니다 */
+    white-space: nowrap; 
+    line-height: 1;
+    margin-top: 10px; /* 베이스라인 정렬 조정 */
+}
 .c-logo__highlight { color: var(--h-primary); }
 
 .c-nav-item { 
-    font-size: clamp(14px, 1.8vw, 20px); color: #4A3F35; 
+    font-size: clamp(14px, 1.8vw, 19px); 
+    color: #4A3F35; font-weight: 800;
     text-decoration: none; padding: 8px 0; position: relative; white-space: nowrap; 
 }
 .router-link-active.c-nav-item::after { 
     content: ''; position: absolute; bottom: -4px; left: 50%; 
-    transform: translateX(-50%); width: clamp(4px, 0.5vw, 6px); height: clamp(4px, 0.5vw, 6px); 
+    transform: translateX(-50%); width: 6px; height: 6px; 
     background-color: var(--h-primary); border-radius: 50%; 
 }
 
 .c-cart-btn { position: relative; color: #4A3F35; flex-shrink: 0; }
-.c-cart-btn__icon { font-size: clamp(24px, 2.5vw, 30px); }
-
 .c-badge {
     position: absolute; top: -4px; right: -8px;
     background: var(--h-accent); color: white;
@@ -245,34 +254,22 @@ const goToProfileOrLogin = () => {
 .c-btn--primary-round {
     background: var(--h-primary); color: #4A3F35; 
     padding: clamp(6px, 1vw, 8px) clamp(12px, 1.5vw, 18px); border-radius: 20px; 
-    font-size: clamp(13px, 1.4vw, 16px);
+    font-size: clamp(13px, 1.4vw, 16px); font-weight: 800;
     transition: background 0.2s ease;
-}
-.c-btn--primary-round:hover {
-    background: var(--h-accent);
 }
 
 .c-btn-icon {
     width: clamp(34px, 4vw, 40px); height: clamp(34px, 4vw, 40px);
     border-radius: 50%; background: var(--h-primary);
     display: flex; align-items: center; justify-content: center; 
-    flex-shrink: 0; border: none; outline: none; cursor: pointer;
-    color: #4A3F35;
-    transition: transform 0.2s ease;
+    border: none; outline: none; cursor: pointer; color: #4A3F35;
 }
-.c-btn-icon:hover { transform: scale(1.05); }
 
 /* --- 3. Utilities & Animations --- */
-.u-fw-bold { font-weight: 700; }
+.u-fw-bold { font-weight: 800; }
 .u-color-primary { color: #FFB300; font-weight: 800; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-active .c-search-modal { animation: slideIn 0.3s ease-out; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-
-@keyframes slideIn {
-    from { transform: translateY(-30px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
 
 @keyframes pop {
     0% { transform: scale(1); }
