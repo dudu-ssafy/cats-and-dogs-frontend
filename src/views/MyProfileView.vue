@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { useRouter } from 'vue-router'; 
+import { shortsApi } from '@/api/shorts';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -13,13 +14,21 @@ const step = ref(0);
 const fileInputRef = ref(null);
 
 // 반려동물 커뮤니티 컨셉에 맞춘 숏츠 데이터
-const likedShorts = ref([
-    { id: 1, title: '솜사탕 같은 포메라니안 산책 🐾', thumbnail: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400', views: '1.5만회' },
-    { id: 2, title: '고양이 꾹꾹이 ASMR 🐱', thumbnail: 'https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?w=400', views: '8.2천회' },
-    { id: 3, title: '강아지 수제 간식 폭풍 먹방 🦴', thumbnail: 'https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=400', views: '2.1만회' },
-    { id: 4, title: '우리 집 강아지 천재성 테스트 🎓', thumbnail: 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=400', views: '12.4만회' },
-    { id: 5, title: '졸음 참는 아기 고양이 💤', thumbnail: 'https://images.unsplash.com/photo-1535930891776-0c2dfb7fda1a?w=400', views: '3.5천회' },
-]);
+const likedShorts = ref([]);
+
+const fetchLikedShorts = async () => {
+    try {
+        const response = await shortsApi.find_like_shorts();
+        likedShorts.value = response.data.map(video => ({
+            id: video.id,
+            title: video.title,
+            thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400',
+            views: `${(video.likes_count || 0).toLocaleString()} 좋아요`
+        }));
+    } catch (error) {
+        console.error('Failed to fetch liked shorts:', error);
+    }
+};
 
 // 숏츠 스크롤 제어 로직
 const shortsScrollRef = ref(null);
@@ -43,6 +52,9 @@ onMounted(() => {
         router.push('/login');
         return;
     }
+    
+    fetchLikedShorts();
+
     if (userStore.petProfile && Object.keys(userStore.petProfile).length > 0) {
         step.value = 2;
     } else {
@@ -250,7 +262,7 @@ const goRegistration = () => router.push('/my-page/license');
 
                     <div class="c-shorts-container is-snapped" ref="shortsScrollRef">
                         <div class="c-shorts-list">
-                            <div v-for="shorts in likedShorts" :key="shorts.id" class="c-shorts-item">
+                            <div v-for="shorts in likedShorts" :key="shorts.id" class="c-shorts-item" @click="router.push(`/shorts?id=${shorts.id}`)">
                                 <div class="c-shorts-item__screen" :style="{ backgroundImage: `url(${shorts.thumbnail})` }">
                                     <div class="play-overlay">
                                         <span class="material-icons-round">play_arrow</span>
@@ -258,7 +270,7 @@ const goRegistration = () => router.push('/my-page/license');
                                 </div>
                                 <div class="c-shorts-item__info">
                                     <div class="title">{{ shorts.title }}</div>
-                                    <div class="meta">조회수 {{ shorts.views }}</div>
+                                    <div class="meta">{{ shorts.views }}</div>
                                 </div>
                                 <button class="more-btn">
                                     <span class="material-icons-round">more_vert</span>

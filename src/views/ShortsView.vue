@@ -1,8 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { shortsApi } from '@/api/shorts';
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
 const videos = ref([]);
+const scrollContainerRef = ref(null);
 
 const fetchShorts = async () => {
     try {
@@ -18,7 +21,20 @@ const fetchShorts = async () => {
             comments: video.comments_count,
             isLiked: video.is_liked,
         }));
-        if (videos.value.length > 0) {
+
+        await nextTick();
+
+        const targetId = parseInt(route.query.id);
+        if (targetId && scrollContainerRef.value) {
+            const index = videos.value.findIndex(v => v.id === targetId);
+            if (index !== -1) {
+                const container = scrollContainerRef.value;
+                container.scrollTop = index * container.clientHeight;
+                selectedVideo.value = videos.value[index];
+            } else if (videos.value.length > 0) {
+                selectedVideo.value = videos.value[0];
+            }
+        } else if (videos.value.length > 0) {
             selectedVideo.value = videos.value[0];
         }
     } catch (error) {
@@ -118,7 +134,7 @@ const fetchComments = async (video) => {
     <div class="center-wrapper">
         
         <div class="mobile-frame">
-            <div class="video-scroll-container" @scroll="handleScroll">
+            <div class="video-scroll-container" @scroll="handleScroll" ref="scrollContainerRef">
                 <div 
                     v-for="video in videos" 
                     :key="video.id" 
