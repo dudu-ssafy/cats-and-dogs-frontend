@@ -1,6 +1,7 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { productApi } from '@/api/product';
 
 // [1] 장바구니 스토어 가져오기
 import { useCartStore } from '@/stores/cart'; 
@@ -13,13 +14,34 @@ const productId = Number(route.params.id); // ID 숫자 변환
 const cartStore = useCartStore();
 
 // 2. 상품 정보
-const product = ref({
-  id: productId, // 현재 페이지 ID 사용
-  brand: '네이처키친',
-  name: '프리미엄 유기농 강아지 사료 2kg',
-  price: 28900, // [중요] 계산을 위해 숫자로 변경! (문자열 X)
-  img: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=800&q=80'
-});
+const product = ref(null);
+const isLoading = ref(true);
+
+const fetchProductDetail = async () => {
+    try {
+        const response = await productApi.getProductDetail(productId);
+        const data = response.data;
+        
+        // 이미지 처리: 메인 이미지 찾기 또는 첫 번째 이미지
+        const mainImage = data.images?.find(img => img.is_main)?.image_url 
+             || data.images?.[0]?.image_url 
+             || null;
+
+        product.value = {
+            id: data.id,
+            brand: 'Cats&Dogs', // 브랜드 정보 없음
+            name: data.title,
+            price: data.base_price, // 숫자 그대로 사용 (계산용)
+            img: mainImage
+        };
+    } catch (error) {
+        console.error('Failed to fetch product details:', error);
+        alert('상품 정보를 불러오는데 실패했습니다.');
+        router.back();
+    } finally {
+        isLoading.value = false;
+    }
+};
 
 // 수량 조절 로직
 const quantity = ref(1);
@@ -28,11 +50,13 @@ const decrease = () => { if(quantity.value > 1) quantity.value--; };
 
 // 구매하기 버튼
 const goOrder = () => {
+    if(!product.value) return;
     router.push('/shop/order'); 
 };
 
 // ✅ [추가] 장바구니 담기 버튼 함수
 const addCart = () => {
+    if(!product.value) return;
     // 1. 스토어의 addToCart 함수 실행 (상품정보 + 수량 전달)
     cartStore.addToCart(product.value, quantity.value);
     
@@ -42,14 +66,21 @@ const addCart = () => {
     }
 };
 
+onMounted(() => {
+    fetchProductDetail();
+});
 </script>
 
 <template>
   <main class="container">
+    <div v-if="isLoading" style="text-align: center; padding: 100px;">
+        <span class="material-icons-round" style="font-size: 48px; color: #FFD54F; animation: spin 1s infinite linear;">autorenew</span>
+        <p>상품 정보를 불러오는 중입니다...</p>
+    </div>
         
-    <section class="product-top">
+    <section class="product-top" v-if="product">
         <div class="img-area">
-            <img :src="product.img" alt="상품이미지" class="main-img">
+            <img :src="product.img || 'https://via.placeholder.com/500'" alt="상품이미지" class="main-img">
         </div>
 
         <div class="info-area">

@@ -50,6 +50,15 @@ const toggleLike = (video) => {
 const toggleFollow = (video) => {
     video.isFollowed = !video.isFollowed;
 };
+
+const togglePlay = (event) => {
+    const videoEl = event.target;
+    if (videoEl.paused) {
+        videoEl.play();
+    } else {
+        videoEl.pause();
+    }
+};
 </script>
 
 <template>
@@ -67,6 +76,54 @@ const toggleFollow = (video) => {
                     @toggle-follow="toggleFollow"
                     @toggle-comments="toggleComments"
                 />
+                >
+                    <video 
+                        class="full-video"
+                        :src="video.videoUrl"
+                        loop
+                        muted
+                        autoplay
+                        playsinline
+                        @click="togglePlay"
+                    ></video>
+
+                    <div class="video-overlay"></div>
+
+                    <div class="info-area">
+                        <div class="profile-row">
+                            <img :src="video.userImg" class="thumb">
+                            <span class="name">{{ video.username }}</span>
+                            
+                           
+                        </div>
+                        <div class="desc-text" v-html="video.desc"></div>
+                        <div class="music-row">
+                            <span class="material-icons-round note-icon">music_note</span>
+                            <span class="music-text">{{ video.music }}</span>
+                        </div>
+                    </div>
+
+                    <div class="side-actions">
+                        <button class="act-btn" :class="{ active: video.isLiked }" @click="toggleLike(video)">
+                            <span class="material-icons-round icon">favorite</span>
+                            <span class="cnt">{{ video.likes }}</span>
+                        </button>
+                        
+                        <button class="act-btn" @click="toggleComments" :class="{ active: showCommentDrawer }">
+                            <span class="material-icons-round icon">mode_comment</span>
+                            <span class="cnt">{{ video.comments }}</span>
+                        </button>
+                        
+                        <button class="act-btn">
+                            <span class="material-icons-round icon">share</span>
+                            <span class="cnt">공유</span>
+                        </button>
+
+                        <div class="disk-ani">
+                            <img :src="video.userImg">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -112,6 +169,32 @@ const toggleFollow = (video) => {
 .video-scroll-container { width: 100%; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; }
 .video-scroll-container::-webkit-scrollbar { display: none; }
 .video-item { width: 100%; height: 100%; position: relative; scroll-snap-align: start; background: #000; }
+.full-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.video-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 40%; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); pointer-events: none; }
+
+/* 정보 영역 */
+.info-area { position: absolute; bottom: 20px; left: 16px; width: 75%; color: white; z-index: 10; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.profile-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.thumb { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #fff; }
+.name { font-weight: 700; font-size: 15px; }
+
+
+
+
+
+.desc-text { font-size: 14px; line-height: 1.4; margin-bottom: 8px; }
+.music-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+
+/* 우측 버튼 */
+.side-actions { position: absolute; bottom: 30px; right: 10px; display: flex; flex-direction: column; align-items: center; gap: 20px; z-index: 10; }
+.act-btn { background: none; border: none; color: white; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; }
+.act-btn:hover { transform: scale(1.1); }
+.act-btn.active .icon { color: #FF5252; }
+.act-btn .icon { font-size: 30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+.act-btn .cnt { font-size: 12px; font-weight: 600; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+.disk-ani { width: 44px; height: 44px; background: #222; border-radius: 50%; border: 8px solid #111; margin-top: 20px; animation: spin 4s linear infinite; }
+.disk-ani img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
 /* 사이드 댓글창 */
 .side-drawer { width: 0; height: 100%; background: white; border-radius: 0 24px 24px 0; overflow: hidden; transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.3); }
