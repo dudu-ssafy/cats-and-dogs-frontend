@@ -12,7 +12,6 @@ const videos = ref([
         likes: 1200,
         comments: 248,
         isLiked: false,
-        isFollowed: false // 🔥 팔로우 상태 추가
     },
     {
         id: 2,
@@ -24,7 +23,6 @@ const videos = ref([
         likes: 560,
         comments: 42,
         isLiked: false,
-        isFollowed: false
     },
     {
         id: 3,
@@ -35,8 +33,7 @@ const videos = ref([
         music: 'Nature Sounds - Relaxing',
         likes: 890,
         comments: 15,
-        isLiked: false,
-        isFollowed: true // 이미 팔로우한 상태 예시
+        isLiked: false, 
     }
 ]);
 
@@ -51,10 +48,7 @@ const toggleLike = (video) => {
     video.likes += video.isLiked ? 1 : -1;
 };
 
-// 🔥 팔로우 토글 함수
-const toggleFollow = (video) => {
-    video.isFollowed = !video.isFollowed;
-};
+
 
 const togglePlay = (event) => {
     const videoEl = event.target;
@@ -95,13 +89,7 @@ const togglePlay = (event) => {
                             <img :src="video.userImg" class="thumb">
                             <span class="name">{{ video.username }}</span>
                             
-                            <button 
-                                class="btn-follow" 
-                                :class="{ 'following': video.isFollowed }"
-                                @click.stop="toggleFollow(video)"
-                            >
-                                {{ video.isFollowed ? '팔로잉' : '팔로우' }}
-                            </button>
+                           
                         </div>
                         <div class="desc-text" v-html="video.desc"></div>
                         <div class="music-row">
@@ -185,24 +173,9 @@ const togglePlay = (event) => {
 .thumb { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #fff; }
 .name { font-weight: 700; font-size: 15px; }
 
-/* 🔥 [핵심] 팔로우 버튼 스타일 */
-.btn-follow { 
-    background: transparent; 
-    border: 1px solid white; 
-    color: white; 
-    border-radius: 4px; 
-    padding: 3px 10px; 
-    font-size: 11px; 
-    font-weight: 700; 
-    cursor: pointer; 
-    transition: 0.2s;
-}
-/* 팔로잉 상태일 때 스타일 (채워진 배경) */
-.btn-follow.following {
-    background: rgba(255, 255, 255, 0.2); /* 반투명 흰색 */
-    border-color: transparent;
-    color: #FFD54F; /* 노란색 텍스트 */
-}
+
+
+
 
 .desc-text { font-size: 14px; line-height: 1.4; margin-bottom: 8px; }
 .music-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
