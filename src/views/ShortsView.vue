@@ -1,136 +1,72 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import api from '@/api';
+import ShortsItem from '@/components/ShortsItem.vue';
 
-const videos = ref([
-    {
-        id: 1,
-        username: '멍멍이맘',
-        userImg: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-        videoUrl: 'https://videos.pexels.com/video-files/7515843/7515843-hd_1080_1920_30fps.mp4', 
-        desc: '산책 나갈 생각에 벌써 신난 댕댕이 ㅋㅋ 🐶<br>꼬리 흔드는 것 좀 보세요! #귀여움 #힐링',
-        music: 'Happy Dog Song - Original Sound',
-        likes: 1200,
-        comments: 248,
-        isLiked: false,
-        isFollowed: false // 🔥 팔로우 상태 추가
-    },
-    {
-        id: 2,
-        username: '냥냥펀치',
-        userImg: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-        videoUrl: 'https://videos.pexels.com/video-files/35318663/14963276_1080_1920_25fps.mp4',
-        desc: '박스만 보면 들어가는 고양이...📦<br>왜 저러는지 아시는 분? #고양이 #박스냥',
-        music: 'Funny Cat - Meow Mix',
-        likes: 560,
-        comments: 42,
-        isLiked: false,
-        isFollowed: false
-    },
-    {
-        id: 3,
-        username: '자연인',
-        userImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-        videoUrl: 'https://cdn.pixabay.com/video/2019/06/07/24252-341364503_tiny.mp4',
-        desc: '힐링되는 숲속 풍경 🌿<br>주말엔 다들 뭐하시나요?',
-        music: 'Nature Sounds - Relaxing',
-        likes: 890,
-        comments: 15,
-        isLiked: false,
-        isFollowed: true // 이미 팔로우한 상태 예시
-    }
-]);
+const videos = ref([]);
 
 const showCommentDrawer = ref(false);
+
+onMounted(() => {
+    fetchShorts();
+});
+
+const fetchShorts = async () => {
+    try {
+        const response = await api.get('/shorts/');
+        videos.value = response.data.map(item => ({
+            id: item.id,
+            username: item.author.nickname || item.author.username,
+            userImg: item.author.profile_image || 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100',
+            videoUrl: item.video_url,
+            desc: item.description || item.title,
+            music: 'Original Sound - ' + (item.author.nickname || item.author.username),
+            likes: item.likes_count,
+            comments: item.comments_count,
+            isLiked: item.is_liked,
+            isFollowed: false // TODO: 팔로우 상태 연동 시 업데이트
+        }));
+    } catch (error) {
+        console.error('Failed to fetch shorts:', error);
+    }
+};
 
 const toggleComments = () => {
     showCommentDrawer.value = !showCommentDrawer.value;
 };
 
 const toggleLike = (video) => {
-    video.isLiked = !video.isLiked;
-    video.likes += video.isLiked ? 1 : -1;
+    api.post(`/shorts/${video.id}/like/`)
+    .then(response => {
+        video.isLiked = response.data.is_liked;
+        video.likes = response.data.likes;
+    })
+    .catch(error => {
+        console.error('Failed to toggle like:', error);
+    });
 };
 
 // 🔥 팔로우 토글 함수
 const toggleFollow = (video) => {
     video.isFollowed = !video.isFollowed;
 };
-
-const togglePlay = (event) => {
-    const videoEl = event.target;
-    if (videoEl.paused) {
-        videoEl.play();
-    } else {
-        videoEl.pause();
-    }
-};
 </script>
 
 <template>
   <div class="shorts-bg-layer">
-    
     <div class="center-wrapper">
-        
         <div class="mobile-frame">
             <div class="video-scroll-container">
-                <div 
+                <ShortsItem 
                     v-for="video in videos" 
                     :key="video.id" 
+                    :video="video"
                     class="video-item"
-                >
-                    <video 
-                        class="full-video"
-                        :src="video.videoUrl"
-                        loop
-                        muted
-                        autoplay
-                        playsinline
-                        @click="togglePlay"
-                    ></video>
-
-                    <div class="video-overlay"></div>
-
-                    <div class="info-area">
-                        <div class="profile-row">
-                            <img :src="video.userImg" class="thumb">
-                            <span class="name">{{ video.username }}</span>
-                            
-                            <button 
-                                class="btn-follow" 
-                                :class="{ 'following': video.isFollowed }"
-                                @click.stop="toggleFollow(video)"
-                            >
-                                {{ video.isFollowed ? '팔로잉' : '팔로우' }}
-                            </button>
-                        </div>
-                        <div class="desc-text" v-html="video.desc"></div>
-                        <div class="music-row">
-                            <span class="material-icons-round note-icon">music_note</span>
-                            <span class="music-text">{{ video.music }}</span>
-                        </div>
-                    </div>
-
-                    <div class="side-actions">
-                        <button class="act-btn" :class="{ active: video.isLiked }" @click="toggleLike(video)">
-                            <span class="material-icons-round icon">favorite</span>
-                            <span class="cnt">{{ video.likes }}</span>
-                        </button>
-                        
-                        <button class="act-btn" @click="toggleComments" :class="{ active: showCommentDrawer }">
-                            <span class="material-icons-round icon">mode_comment</span>
-                            <span class="cnt">{{ video.comments }}</span>
-                        </button>
-                        
-                        <button class="act-btn">
-                            <span class="material-icons-round icon">share</span>
-                            <span class="cnt">공유</span>
-                        </button>
-
-                        <div class="disk-ani">
-                            <img :src="video.userImg">
-                        </div>
-                    </div>
-                </div>
+                    :is-comment-open="showCommentDrawer"
+                    @toggle-like="toggleLike"
+                    @toggle-follow="toggleFollow"
+                    @toggle-comments="toggleComments"
+                />
             </div>
         </div>
 
@@ -176,47 +112,6 @@ const togglePlay = (event) => {
 .video-scroll-container { width: 100%; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; }
 .video-scroll-container::-webkit-scrollbar { display: none; }
 .video-item { width: 100%; height: 100%; position: relative; scroll-snap-align: start; background: #000; }
-.full-video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.video-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 40%; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); pointer-events: none; }
-
-/* 정보 영역 */
-.info-area { position: absolute; bottom: 20px; left: 16px; width: 75%; color: white; z-index: 10; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-.profile-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.thumb { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #fff; }
-.name { font-weight: 700; font-size: 15px; }
-
-/* 🔥 [핵심] 팔로우 버튼 스타일 */
-.btn-follow { 
-    background: transparent; 
-    border: 1px solid white; 
-    color: white; 
-    border-radius: 4px; 
-    padding: 3px 10px; 
-    font-size: 11px; 
-    font-weight: 700; 
-    cursor: pointer; 
-    transition: 0.2s;
-}
-/* 팔로잉 상태일 때 스타일 (채워진 배경) */
-.btn-follow.following {
-    background: rgba(255, 255, 255, 0.2); /* 반투명 흰색 */
-    border-color: transparent;
-    color: #FFD54F; /* 노란색 텍스트 */
-}
-
-.desc-text { font-size: 14px; line-height: 1.4; margin-bottom: 8px; }
-.music-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-
-/* 우측 버튼 */
-.side-actions { position: absolute; bottom: 30px; right: 10px; display: flex; flex-direction: column; align-items: center; gap: 20px; z-index: 10; }
-.act-btn { background: none; border: none; color: white; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; }
-.act-btn:hover { transform: scale(1.1); }
-.act-btn.active .icon { color: #FF5252; }
-.act-btn .icon { font-size: 30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-.act-btn .cnt { font-size: 12px; font-weight: 600; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
-.disk-ani { width: 44px; height: 44px; background: #222; border-radius: 50%; border: 8px solid #111; margin-top: 20px; animation: spin 4s linear infinite; }
-.disk-ani img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-@keyframes spin { 100% { transform: rotate(360deg); } }
 
 /* 사이드 댓글창 */
 .side-drawer { width: 0; height: 100%; background: white; border-radius: 0 24px 24px 0; overflow: hidden; transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.3); }
