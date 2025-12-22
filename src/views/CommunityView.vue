@@ -124,7 +124,7 @@ const filteredPosts = computed(() => posts.value);
                             >
                                 <span class="rank-no" :class="{ top: index < 3 }">{{ index + 1 }}</span>
                                 <span class="best-txt">{{ post.title }}</span>
-                                <span class="cmt-cnt" v-if="post.commentCount">[{{ post.commentCount }}]</span>
+                                <span class="cmt-cnt" v-if="post.comment_count">[{{ post.comment_count }}]</span>
                             </div>
                         </div>
                         <div>
@@ -136,7 +136,7 @@ const filteredPosts = computed(() => posts.value);
                             >
                                 <span class="rank-no">{{ index + 6 }}</span>
                                 <span class="best-txt">{{ post.title }}</span>
-                                <span class="cmt-cnt" v-if="post.commentCount">[{{ post.commentCount }}]</span>
+                                <span class="cmt-cnt" v-if="post.comment_count">[{{ post.comment_count }}]</span>
                             </div>
                         </div>
                     </div>
@@ -165,16 +165,16 @@ const filteredPosts = computed(() => posts.value);
                         <col style="width: 60px;"><col style="width: 100px;"><col style="width: auto;"><col style="width: 120px;"><col style="width: 100px;"><col style="width: 70px;">
                     </colgroup>
                     <thead>
-                        <tr><th>번호</th><th>분류</th><th style="text-align:left; padding-left:24px;">제목</th><th>글쓴이</th><th>등록일</th><th>조회</th></tr>
+                        <tr><th>번호</th><th>분류</th><th style="text-align:left; padding-left:24px;">제목</th><th>글쓴이</th><th>등록일</th><th>조회수</th></tr>
                     </thead>
                     <tbody>
                         <tr v-for="(post, index) in paginatedPosts" :key="post.id">
                             <td>{{ totalPosts - ((currentPage - 1) * itemsPerPage) - index }}</td>
-                            <td><span class="cat-badge">{{ post.categoryName }}</span></td>
+                            <td><span class="cat-badge">{{ post.category_name }}</span></td>
                             <td class="td-title">
                                 <div class="post-link" @click="router.push(`/community/post/${post.id}`)">
                                     <span class="post-subj">{{ post.title }}</span>
-                                     <span class="new-badge" v-if="post.isNew">N</span>
+                                     <span class="new-badge" v-if="post.is_new">N</span>
                                 </div>
                             </td>
                             <td>{{ post.author }}</td>

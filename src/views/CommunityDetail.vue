@@ -20,8 +20,8 @@ onMounted(async () => {
         post.value = response.data;
         
         // 데이터 동기화
-        isLiked.value = post.value.isLiked || false;
-        likeCount.value = post.value.likesCount || 0;
+        isLiked.value = post.value.is_liked || false;
+        likeCount.value = post.value.likes_count || 0;
     } catch (error) {
         console.error('게시글 로드 실패:', error);
         alert('삭제되었거나 존재하지 않는 게시글입니다.');
@@ -63,12 +63,12 @@ const toggleLike = async () => {
         <main class="main-content">
             <article class="post-view-card">
                 <div class="post-header">
-                    <span class="category-label">{{ post.categoryName }}</span>
+                    <span class="category-label">{{ post.category_name }}</span>
                     <h1 class="post-subject">{{ post.title }}</h1>
                     
                     <div class="post-meta-row">
                         <div class="author-info">
-                            <img :src="post.authorProfileImg || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="author-img">
+                            <img :src="post.author_profile_img || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" class="author-img">
                             <div>
                                 <span class="author-name">{{ post.author }}</span>
                                 <span class="post-date">{{ post.date }}</span>
