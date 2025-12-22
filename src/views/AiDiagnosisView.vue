@@ -246,7 +246,7 @@ const renderMarkdown = (text) => {
                     <span v-if="msg.text">{{ msg.text }}</span>
                 </div>
 
-                <div class="msg-bubble markdown-body" v-else-if="msg.type === 'ai'" v-html="renderMarkdown(msg.text)">
+                <div class="msg-bubble markdown-body" v-else-if="msg.type === 'ai' && msg.text" v-html="renderMarkdown(msg.text)">
                 </div>
 
                 <div v-else-if="msg.type === 'result'" style="width: 100%;">
@@ -255,7 +255,15 @@ const renderMarkdown = (text) => {
             </div>
 
             <div class="msg-row ai" v-if="isLoading">
-                <div class="msg-bubble loading">...</div>
+                <div class="msg-bubble loading-bubble">
+                    <span class="material-icons-round paw-icon">pets</span>
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="loading-text">AI 닥터가 분석 중입니다...</span>
+                </div>
             </div>
         </div>
 
@@ -275,7 +283,7 @@ const renderMarkdown = (text) => {
 </template>
 
 <style scoped>
-/* 기존 스타일 그대로 유지 */
+/* 기존 스타일은 100% 동일하게 유지 */
 .ai-container { display: flex; height: 100vh; overflow: hidden; color: #333; }
 .chat-main { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
 .chat-content { flex: 1; overflow-y: auto; padding: 20px 40px 100px; }
@@ -301,6 +309,50 @@ const renderMarkdown = (text) => {
 .chat-header { height: 60px; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; padding: 0 32px; font-weight: bold; }
 .ver-badge { font-size: 12px; background: #F3F4F6; padding: 4px 8px; border-radius: 6px; color: #666; margin-left: 6px; font-weight: normal; }
 .btn-send { width: 40px; height: 40px; border-radius: 50%; background: #FFD54F; color: white; border: none; cursor: pointer; }
+
+/* 로딩 화면 전용 스타일 */
+.loading-bubble {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff !important;
+    border: 1px solid #E5E7EB;
+    padding: 12px 20px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.paw-icon {
+    color: #FFD54F;
+    font-size: 20px;
+    animation: pulse 1.5s infinite;
+}
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+}
+.typing-indicator span {
+    width: 6px;
+    height: 6px;
+    background: #FFD54F;
+    border-radius: 50%;
+    display: inline-block;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+.loading-text {
+    font-size: 13px;
+    color: #6B7280;
+    font-weight: 600;
+}
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
+}
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
 
 /* Markdown Styles */
 .markdown-body :deep(h1) { margin-top: 24px; margin-bottom: 16px; font-weight: 900; color: #1A1A1A; font-size: 22px; padding-bottom: 8px; border-bottom: 2px solid #FFD54F; }
