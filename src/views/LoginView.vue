@@ -20,17 +20,8 @@ onMounted(async () => {
         try {
             localStorage.setItem('access_token', access);
             localStorage.setItem('refresh_token', refresh);
-            
-            // 유저 정보 가져오기
-            const response = await api.get('users/profile/');
-            userStore.user = {
-                ...response.data,
-                profileImg: response.data.profile_image,
-                access,
-                refresh
-            };
-            localStorage.setItem('user-info', JSON.stringify(userStore.user));
-            
+            await userStore.mypage();
+
             alert(`소셜 로그인 성공! 환영합니다, ${userStore.user.username}님! 🐾`);
             router.push('/');
         } catch (error) {
@@ -65,6 +56,7 @@ const handleLogin = async () => {
 const loginSocial = (provider) => {
     // 🔥 중요: axios(api.get) 대신 브라우저 페이지 자체를 이동시켜야 합니다.
     const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1/';
+    
     window.location.href = `${backendUrl}users/oauth_login/?to=${provider}`;
 };
 </script>
