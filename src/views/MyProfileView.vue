@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '@/stores/user';
-import { useRouter } from 'vue-router'; 
+import { useRouter } from 'vue-router'
+import api from '@/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -77,7 +78,7 @@ const form = ref({
     address: '',
     description: '',
     weight: '',
-    petImgUrl: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=800&q=80',
+    petImgUrl: userStore.user.profileImg,
 });
 
 const userForm = ref({
@@ -138,18 +139,28 @@ const triggerFileUpload = () => {
 const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+        // 프리뷰를 위해 로컬에서 먼저 읽기
         const reader = new FileReader();
         reader.onload = (e) => {
-            const newImgUrl = e.target.result;
-            // 로컬 상태 업데이트
-            form.value.petImgUrl = newImgUrl;
-            // 스토어 업데이트 (이미 생성된 프로필에 반영)
-            userStore.registerPet({
-                ...userStore.petProfile,
-                petImgUrl: newImgUrl
-            });
+            const previewUrl = e.target.result;
+            form.value.petImgUrl = previewUrl;
+            // 전역 유저 프로필 이미지도 업데이트하여 즉시 반영
+            userStore.updateUser({ profileImg: previewUrl });
         };
         reader.readAsDataURL(file);
+
+        const formData = new FormData();
+        formData.append('image', file);
+        api.post('/users/profile_image_upload/', formData)
+        .then(response => {
+            console.log('Upload started:', response.data);
+            // 업로드가 완료되면 백엔드 Task에서 유저 프로필을 업데이트하므로, 
+            // 나중에 다시 조회하거나 알림을 줄 수 있습니다.
+        })
+        .catch(error => {
+            console.error('Upload failed:', error.response.data);
+            alert('이미지 업로드 중 오류가 발생했습니다.');
+        });
     }
 };
 
@@ -233,8 +244,7 @@ const goRegistration = () => router.push('/my-page/license');
 
             <div class="card profile-card">
                 <div class="img-wrapper">
-                    <img :src="myPet.petImgUrl" alt="프로필">
-                    
+                    <img :src="userStore.user.profileImg" alt="프로필">
                     <input type="file" ref="fileInputRef" style="display: none" accept="image/*" @change="handleFileChange">
                     <button class="c-camera-btn" @click="triggerFileUpload">
                         <span class="material-icons-round">photo_camera</span>

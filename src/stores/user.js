@@ -55,6 +55,12 @@ export const useUserStore = defineStore('user', () => {
       refresh
     };
 
+    // petProfile이 있으면 petImgUrl 업데이트
+    if (petProfile.value && typeof petProfile.value === 'object') {
+      petProfile.value.petImgUrl = userData.profile_image;
+      localStorage.setItem('pet-info', JSON.stringify(petProfile.value));
+    }
+
     // 로컬스토리지 저장
     localStorage.setItem('user-info', JSON.stringify(user.value));
   };
