@@ -1,41 +1,31 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { shortsApi } from '@/api/shorts';
 
-const videos = ref([
-    {
-        id: 1,
-        username: '멍멍이맘',
-        userImg: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-        videoUrl: 'https://cdn.pixabay.com/video/2021/04/14/71089-537131758_tiny.mp4', 
-        desc: '산책 나갈 생각에 벌써 신난 댕댕이 ㅋㅋ 🐶<br>꼬리 흔드는 것 좀 보세요! #귀여움 #힐링',
-        music: 'Happy Dog Song - Original Sound',
-        likes: 1200,
-        comments: 248,
-        isLiked: false,
-    },
-    {
-        id: 2,
-        username: '냥냥펀치',
-        userImg: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-        videoUrl: 'https://cdn.pixabay.com/video/2020/06/23/42828-433066916_tiny.mp4',
-        desc: '박스만 보면 들어가는 고양이...📦<br>왜 저러는지 아시는 분? #고양이 #박스냥',
-        music: 'Funny Cat - Meow Mix',
-        likes: 560,
-        comments: 42,
-        isLiked: false,
-    },
-    {
-        id: 3,
-        username: '자연인',
-        userImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-        videoUrl: 'https://cdn.pixabay.com/video/2019/06/07/24252-341364503_tiny.mp4',
-        desc: '힐링되는 숲속 풍경 🌿<br>주말엔 다들 뭐하시나요?',
-        music: 'Nature Sounds - Relaxing',
-        likes: 890,
-        comments: 15,
-        isLiked: false, 
+const videos = ref([]);
+
+const fetchShorts = async () => {
+    try {
+        const response = await shortsApi.getShorts();
+        videos.value = response.data.map(video => ({
+            id: video.id,
+            username: video.author.username || 'Anonymous',
+            userImg: video.author.profile_image || 'https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
+            videoUrl: video.video_url,
+            desc: video.description || video.title,
+            music: video.title || 'Original Sound',
+            likes: video.likes_count,
+            comments: video.comments_count,
+            isLiked: video.is_liked,
+        }));
+    } catch (error) {
+        console.error('Failed to fetch shorts:', error);
     }
-]);
+};
+
+onMounted(() => {
+    fetchShorts();
+});
 
 const showCommentDrawer = ref(false);
 
@@ -43,9 +33,17 @@ const toggleComments = () => {
     showCommentDrawer.value = !showCommentDrawer.value;
 };
 
-const toggleLike = (video) => {
-    video.isLiked = !video.isLiked;
-    video.likes += video.isLiked ? 1 : -1;
+const toggleLike = async (video) => {
+    try {
+        const response = await shortsApi.toggleLike(video.id);
+        video.isLiked = response.data.is_liked;
+        video.likes = response.data.likes;
+    } catch (error) {
+        console.error('Failed to toggle like:', error);
+        if (error.response?.status === 401) {
+            alert('좋아요를 누르려면 로그인이 필요합니다.');
+        }
+    }
 };
 
 
