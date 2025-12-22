@@ -12,22 +12,6 @@ const step = ref(0);
 // 사진 업로드를 위한 ref
 const fileInputRef = ref(null);
 
-// 팔로우 데이터
-const followerCount = ref(128);
-const followingCount = ref(95);
-
-// 모달 상태 관리
-const showFollowModal = ref(false);
-const followModalType = ref('follower');
-
-// 모달용 더미 유저 리스트
-const followListData = ref([
-    { id: 1, nickname: '멍멍이맘', img: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=100', bio: '포메라니안 초코와 함께해요 🐾' },
-    { id: 2, nickname: '집사일기', img: 'https://images.unsplash.com/photo-1544568100-847a948585b9?w=100', bio: '댕댕이들과의 일상을 기록합니다.' },
-    { id: 3, nickname: '자연인', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', bio: '산책 친구 구함! 쪽지 주세요.' },
-    { id: 4, nickname: '초코주인', img: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=100', bio: '강아지는 사랑입니다 🐶' },
-]);
-
 // 반려동물 커뮤니티 컨셉에 맞춘 숏츠 데이터
 const likedShorts = ref([
     { id: 1, title: '솜사탕 같은 포메라니안 산책 🐾', thumbnail: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400', views: '1.5만회' },
@@ -130,7 +114,6 @@ const openEditMode = () => {
     step.value = 3; 
 };
 
-// 사진 변경 로직
 const triggerFileUpload = () => {
     fileInputRef.value.click();
 };
@@ -141,9 +124,7 @@ const handleFileChange = (event) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const newImgUrl = e.target.result;
-            // 로컬 상태 업데이트
             form.value.petImgUrl = newImgUrl;
-            // 스토어 업데이트 (이미 생성된 프로필에 반영)
             userStore.registerPet({
                 ...userStore.petProfile,
                 petImgUrl: newImgUrl
@@ -151,11 +132,6 @@ const handleFileChange = (event) => {
         };
         reader.readAsDataURL(file);
     }
-};
-
-const openFollowModal = (type) => {
-    followModalType.value = type;
-    showFollowModal.value = true;
 };
 
 const updateAllInfo = () => {
@@ -248,18 +224,6 @@ const goRegistration = () => router.push('/my-page/license');
                     <span class="sub-badge">{{ myPet.ownerNickname }}님의 가족</span>
                     <h1 class="main-name">{{ myPet.petName }}</h1>
                     
-                    <div class="follow-stats">
-                        <div class="stat-link" @click="openFollowModal('follower')">
-                            <span class="label">팔로워</span>
-                            <span class="value">{{ followerCount }}</span>
-                        </div>
-                        <div class="v-divider"></div>
-                        <div class="stat-link" @click="openFollowModal('following')">
-                            <span class="label">팔로잉</span>
-                            <span class="value">{{ followingCount }}</span>
-                        </div>
-                    </div>
-
                     <p class="desc">{{ myPet.description }}</p>
                     <div class="tags">
                         <span v-for="tag in myPet.tags" :key="tag" class="tag-pill">{{ tag }}</span>
@@ -347,28 +311,6 @@ const goRegistration = () => router.push('/my-page/license');
                 <button class="action-btn" @click="updateAllInfo" style="background: #3E2723; color: white;">수정 완료 ✅</button>
             </div>
         </section>
-
-        <div v-if="showFollowModal" class="c-modal-overlay" @click.self="showFollowModal = false">
-            <div class="c-modal-window fadeUp">
-                <div class="c-modal-header">
-                    <h3 class="title">{{ followModalType === 'follower' ? '팔로워' : '팔로잉' }}</h3>
-                    <button class="close-btn" @click="showFollowModal = false">
-                        <span class="material-icons-round">close</span>
-                    </button>
-                </div>
-                <div class="c-modal-body">
-                    <div v-for="user in followListData" :key="user.id" class="c-user-item">
-                        <img :src="user.img" class="c-user-item__avatar">
-                        <div class="c-user-item__info">
-                            <div class="name">{{ user.nickname }}</div>
-                            <div class="bio">{{ user.bio }}</div>
-                        </div>
-                        <button class="c-user-item__btn">보기</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
   </div>
 </template>
@@ -389,13 +331,6 @@ const goRegistration = () => router.push('/my-page/license');
 /* --- 카드 공통 오브젝트 --- */
 .card { background: white; padding: 24px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #EEE; margin-bottom: 20px; }
 
-/* --- 팔로우 섹션 --- */
-.follow-stats { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
-.stat-link { cursor: pointer; display: flex; gap: 5px; font-size: 14px; transition: opacity 0.2s; }
-.stat-link .label { color: #8D6E63; font-weight: 500; }
-.stat-link .value { color: #3E2723; font-weight: 800; }
-.v-divider { width: 1px; height: 12px; background: #E0E0E0; }
-
 /* --- 폼 스타일 --- */
 .input-wrap { margin-bottom: 16px; text-align: left; }
 .input-wrap label { display: block; font-weight: 700; font-size: 14px; color: #5D4037; margin-bottom: 6px; }
@@ -413,7 +348,6 @@ const goRegistration = () => router.push('/my-page/license');
 /* --- 상세 프로필 컴포넌트 --- */
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 
-/* [OOCSS] c-camera-btn 스킨 및 배치 */
 .img-wrapper { position: relative; width: 120px; height: 120px; margin: 0 auto 20px; }
 .img-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 .c-camera-btn { 
@@ -439,25 +373,22 @@ const goRegistration = () => router.push('/my-page/license');
 .divider { width: 1px; background: #EEE; }
 .sub-title { font-family: 'Jua'; font-size: 18px; color: #FFB300; margin-bottom: 15px; border-bottom: 2px solid #FFF8E1; padding-bottom: 5px; text-align: left; }
 
-/* --- [OOCSS] c-shorts-header --- */
+/* --- 숏츠 섹션 스타일 --- */
 .c-shorts-header { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #FFF8E1; }
 .c-shorts-header .title { font-family: 'Jua'; font-size: 20px; color: #5D4037; display: flex; align-items: center; gap: 8px; }
 
-/* --- [OOCSS] c-shorts-wrapper --- */
 .c-shorts-wrapper { position: relative; width: 100%; }
 .c-shorts-container { width: 100%; overflow-x: auto; display: flex; padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .c-shorts-container::-webkit-scrollbar { display: none; }
 .c-shorts-list { display: flex; gap: 10px; padding: 0 5px; }
 .is-snapped { scroll-snap-type: x mandatory; }
 
-/* --- [OOCSS] c-nav-arrow --- */
 .c-nav-arrow { position: absolute; top: 40%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; background: white; border: 2px solid #FFF8E1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.3s ease; }
 .c-nav-arrow:hover { background: #FFF8E1; transform: translateY(-50%) scale(1.1); color: #FFB300; }
 .c-nav-arrow .material-icons-round { font-size: 28px; }
 .is-left { left: -15px; }
 .is-right { right: -15px; }
 
-/* --- [OOCSS] c-shorts-item --- */
 .c-shorts-item { flex: 0 0 145px; position: relative; text-align: left; scroll-snap-align: start; }
 .c-shorts-item__screen { width: 100%; aspect-ratio: 9 / 16; border-radius: 12px; background-size: cover; background-position: center; background-color: #F0F0F0; position: relative; overflow: hidden; margin-bottom: 8px; }
 .play-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
@@ -472,21 +403,6 @@ const goRegistration = () => router.push('/my-page/license');
 .c-choice-card { display: flex; align-items: center; gap: 20px; padding: 24px; border-radius: 24px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; text-align: left; }
 .is-primary { background-color: #FFF9E6; border-color: #FFE082; }
 .is-secondary { background-color: #F5F5F5; border-color: #E0E0E0; }
-.c-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-.c-modal-window { background: white; width: 100%; max-width: 400px; border-radius: 28px; overflow: hidden; animation: fadeUp 0.4s ease-out; }
-
-/* --- 모달 내부 유저 리스트 --- */
-.c-modal-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #EEE; }
-.c-modal-header .title { font-family: 'Jua'; font-size: 20px; color: #3E2723; margin: 0; }
-.c-modal-header .close-btn { background: none; border: none; cursor: pointer; color: #999; }
-.c-modal-body { padding: 10px 20px; max-height: 400px; overflow-y: auto; }
-.c-user-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #F5F5F5; }
-.c-user-item:last-child { border-bottom: none; }
-.c-user-item__avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; margin-right: 15px; }
-.c-user-item__info { flex: 1; text-align: left; }
-.c-user-item__info .name { font-weight: 700; font-size: 15px; color: #3E2723; }
-.c-user-item__info .bio { font-size: 12px; color: #8D6E63; }
-.c-user-item__btn { background: #FFF8E1; border: 1px solid #FFE082; color: #E65100; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
 
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>

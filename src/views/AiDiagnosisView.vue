@@ -21,10 +21,12 @@ const currentSessionId = ref(null);
 const sidebarRef = ref(null);
 const fileInputRef = ref(null);
 
-// 페이지 진입 시 로직
+// ✅ [로직] 전송 대기용 상태
+const selectedFile = ref(null);
+const imagePreview = ref('');
+
 onMounted(() => {
     window.scrollTo(0, 0);
-
     if (route.query.symptom) {
         userInput.value = route.query.symptom; 
         sendMessage(); 
@@ -53,51 +55,53 @@ const selectSession = async (sessionId) => {
     }
 };
 
-// 1. 파일 업로드 창 열기
 const triggerFileInput = () => {
     fileInputRef.value.click();
 };
 
-// 2. 이미지 선택 시 처리 (미리보기 추가 및 전송)
-const handleImageUpload = async (event) => {
+const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
-    // 미리보기용 메시지 추가
+    selectedFile.value = file;
     const reader = new FileReader();
     reader.onload = (e) => {
-        messages.value.push({ 
-            type: 'user', 
-            text: '', 
-            image: e.target.result // Base64 미리보기 주소
-        });
-        scrollToBottom();
+        imagePreview.value = e.target.result;
     };
     reader.readAsDataURL(file);
-
-    // 즉시 AI에게 전송
-    isLoading.value = true;
-    await fetchAiResponse("", file); 
-    
-    // 파일 인풋 초기화 (같은 파일 다시 올릴 수 있게)
     event.target.value = '';
 };
 
-const sendMessage = async () => {
-    if(!userInput.value.trim()) return;
-    messages.value.push({ type: 'user', text: userInput.value });
-    const text = userInput.value;
-    userInput.value = '';
-    scrollToBottom();
-
-    isLoading.value = true;
-    await fetchAiResponse(text);
+const cancelImage = () => {
+    selectedFile.value = null;
+    imagePreview.value = '';
 };
 
-// ✅ [핵심 수정] 파라미터에 file 추가 및 FormData 대응
+const sendMessage = async () => {
+    if(!userInput.value.trim() && !selectedFile.value) return;
+
+    // ✅ 사진이 답변 사이에 끼지 않도록 '유저 메시지'를 최상단에 먼저 추가
+    messages.value.push({ 
+        type: 'user', 
+        text: userInput.value,
+        image: imagePreview.value 
+    });
+
+    const text = userInput.value;
+    const file = selectedFile.value;
+
+    userInput.value = '';
+    selectedFile.value = null;
+    imagePreview.value = '';
+    
+    await scrollToBottom();
+
+    isLoading.value = true;
+    await fetchAiResponse(text, file);
+};
+
 const fetchAiResponse = async (text, file = null) => {
     const history = messages.value.slice(0, -1)
-        .filter(m => m.type !== 'result') // 결과 카드는 히스토리에서 제외
+        .filter(m => m.type !== 'result')
         .map(m => ({
             role: m.type === 'user' ? 'user' : 'model',
             content: m.text || ''
@@ -109,23 +113,26 @@ const fetchAiResponse = async (text, file = null) => {
 
     try {
         const token = localStorage.getItem('access_token');
-        
-        // 이미지 유무에 따른 요청 방식 분기
         let response;
+        const baseUrl = import.meta.env.VITE_AI_API_BASE_URL || 'http://localhost:8001/api/v1/';
+        const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+
         if (file) {
             const formData = new FormData();
-            formData.append('prompt', text);
-            formData.append('image', file);
-            if (currentSessionId.value) formData.append('chat_id', currentSessionId.value);
+            formData.append('prompt', text || "이 사진을 분석해줘");
+            formData.append('image_files', file); 
+            if (currentSessionId.value && currentSessionId.value !== 'null') {
+                formData.append('chat_id', Number(currentSessionId.value));
+            }
             formData.append('history', JSON.stringify(history));
 
-            response = await fetch(`${import.meta.env.VITE_AI_API_BASE_URL || 'http://localhost:8001/'}chat/image`, {
+            response = await fetch(`${cleanBaseUrl}chat/multimodal`, {
                 method: 'post',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             });
         } else {
-            response = await fetch(`${import.meta.env.VITE_AI_API_BASE_URL || 'http://localhost:8001/'}chat/text`, {
+            response = await fetch(`${cleanBaseUrl}chat/text`, {
                 method: 'post',
                 headers: {
                     'Content-Type': 'application/json',
@@ -147,33 +154,31 @@ const fetchAiResponse = async (text, file = null) => {
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-
             let chunk = decoder.decode(value, { stream: true });
             
-            if (chunk.includes('[CHAT_ID]:')) {
-                const parts = chunk.split('[CHAT_ID]:');
-                chunk = parts[0]; // ID 부분 제외한 텍스트만 남김
-                currentSessionId.value = parseInt(parts[1].trim());
+            // ✅ [수정 핵심] [CHAT_ID]:숫자 패턴만 정확하게 찾아서 지웁니다.
+            // 텍스트를 갉아먹지 않도록 정교하게 매칭합니다.
+            const idMatch = chunk.match(/\[CHAT_ID\]:\s*(\d+)/);
+            if (idMatch) {
+                currentSessionId.value = parseInt(idMatch[1]);
+                // 태그와 숫자 부분만 제거하고 뒤에 붙은 "보호자님" 같은 글자는 건드리지 않습니다.
+                chunk = chunk.replace(/\[CHAT_ID\]:\s*\d+/, '');
             }
 
             if (chunk.includes('---')) {
                 const parts = chunk.split('---');
                 currentAiMsg.text += parts[0];
-
                 for (let i = 1; i < parts.length; i++) {
                     const newMsg = { type: 'ai', text: parts[i] };
                     messages.value.push(newMsg);
-                    currentAiMsg = newMsg; // 포인터를 새 말풍선으로 변경
+                    currentAiMsg = newMsg;
                 }
             } else {
-                // 일반 텍스트는 현재 말풍선에 계속 추가
                 currentAiMsg.text += chunk;
             }
             scrollToBottom();
         }
-
         if (sidebarRef.value) sidebarRef.value.fetchHistory();
-
     } catch (error) {
         console.error('AI API Error:', error);
         currentAiMsg.text = '죄송합니다. 서비스 연결에 문제가 발생했습니다.';
@@ -205,19 +210,13 @@ const renderMarkdown = (text) => {
 
 <template>
   <div class="ai-container">
-    <AISidebar 
-        ref="sidebarRef"
-        :currentSessionId="currentSessionId" 
-        @select-session="selectSession"
-        @new-chat="startNewChat"
-    />
+    <AISidebar ref="sidebarRef" :currentSessionId="currentSessionId" @select-session="selectSession" @new-chat="startNewChat" />
 
     <main class="chat-main">
         <div class="chat-header">함께하개냥 AI 닥터 <span class="ver-badge">Ver 2.0</span></div>
 
         <div class="welcome-screen" v-if="messages.length === 0">
             <h2 class="welcome-title">어디가 불편한가요?<br>사진이나 증상을 알려주세요.</h2>
-
             <div class="suggestion-grid">
                 <div class="suggestion-card" @click="clickSuggestion('사진을 업로드할게요')">
                     <div class="sug-title">📷 사진으로 진단하기</div>
@@ -240,32 +239,41 @@ const renderMarkdown = (text) => {
 
         <div class="chat-content" v-else ref="chatContentRef">
             <div v-for="(msg, i) in messages" :key="i" :class="['msg-row', msg.type === 'user' ? 'user' : 'ai']">
-                
                 <div class="msg-bubble" v-if="msg.type === 'user'">
                     <img v-if="msg.image" :src="msg.image" class="msg-img" />
                     <span v-if="msg.text">{{ msg.text }}</span>
                 </div>
-
-                <div class="msg-bubble markdown-body" v-else-if="msg.type === 'ai'" v-html="renderMarkdown(msg.text)">
+                <div class="msg-bubble markdown-body" v-else-if="msg.type === 'ai' && msg.text" v-html="renderMarkdown(msg.text)">
                 </div>
-
                 <div v-else-if="msg.type === 'result'" style="width: 100%;">
                     <DiagnosisCard :data="msg.data" />
                 </div>
             </div>
 
             <div class="msg-row ai" v-if="isLoading">
-                <div class="msg-bubble loading">...</div>
+                <div class="msg-bubble loading-bubble">
+                    <span class="material-icons-round paw-icon">pets</span>
+                    <div class="typing-indicator">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <span class="loading-text">AI 닥터가 분석 중입니다...</span>
+                </div>
             </div>
         </div>
 
         <div class="input-area">
+            <div v-if="imagePreview" class="input-preview-box">
+                <div class="preview-item">
+                    <img :src="imagePreview" />
+                    <button @click="cancelImage" class="btn-cancel">×</button>
+                </div>
+            </div>
+
             <div class="input-container">
                 <input type="file" ref="fileInputRef" style="display: none" accept="image/*" @change="handleImageUpload">
                 <button class="btn-attach" @click="triggerFileInput" title="사진 업로드">
                     <span class="material-icons-round">add_photo_alternate</span>
                 </button>
-                
                 <input type="text" class="chat-input" v-model="userInput" @keyup.enter="sendMessage" placeholder="증상을 입력하세요...">
                 <button class="btn-send" @click="sendMessage">⬆</button>
             </div>
@@ -275,7 +283,7 @@ const renderMarkdown = (text) => {
 </template>
 
 <style scoped>
-/* 기존 스타일 그대로 유지 */
+/* 🎨 [디자인 복구] 사용자님의 원본 CSS를 그대로 적용했습니다. */
 .ai-container { display: flex; height: 100vh; overflow: hidden; color: #333; }
 .chat-main { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
 .chat-content { flex: 1; overflow-y: auto; padding: 20px 40px 100px; }
@@ -291,6 +299,12 @@ const renderMarkdown = (text) => {
 .btn-attach { background: none; border: none; cursor: pointer; color: #9CA3AF; display: flex; align-items: center; transition: color 0.2s; }
 .btn-attach:hover { color: #FFD54F; }
 .btn-send { width: 36px; height: 36px; border-radius: 50%; background: #FFD54F; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+.input-preview-box { display: flex; padding-bottom: 10px; padding-left: 10px; }
+.preview-item { position: relative; width: 50px; height: 50px; }
+.preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+.btn-cancel { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; background: #999; color: white; border-radius: 50%; border: none; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
 .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 100px; }
 .welcome-title { font-size: 24px; font-weight: 800; margin-bottom: 40px; text-align: center; }
 .suggestion-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 700px; width: 100%; padding: 0 20px; }
@@ -302,7 +316,16 @@ const renderMarkdown = (text) => {
 .ver-badge { font-size: 12px; background: #F3F4F6; padding: 4px 8px; border-radius: 6px; color: #666; margin-left: 6px; font-weight: normal; }
 .btn-send { width: 40px; height: 40px; border-radius: 50%; background: #FFD54F; color: white; border: none; cursor: pointer; }
 
-/* Markdown Styles */
+/* 로딩 스타일 */
+.loading-bubble { display: flex; align-items: center; gap: 12px; background: #ffffff !important; border: 1px solid #E5E7EB; padding: 12px 20px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.paw-icon { color: #FFD54F; font-size: 20px; animation: pulse 1.5s infinite; }
+.typing-indicator { display: flex; gap: 4px; }
+.typing-indicator span { width: 6px; height: 6px; background: #FFD54F; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
+.loading-text { font-size: 13px; color: #6B7280; font-weight: 600; }
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+@keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+
+/* ✅ [마크다운 스타일 복구] 줄 맞춤과 서식 100% 복구 */
 .markdown-body :deep(h1) { margin-top: 24px; margin-bottom: 16px; font-weight: 900; color: #1A1A1A; font-size: 22px; padding-bottom: 8px; border-bottom: 2px solid #FFD54F; }
 .markdown-body :deep(h2) { margin-top: 20px; margin-bottom: 12px; font-weight: 800; color: #2C2C2C; font-size: 18px; }
 .markdown-body :deep(h3) { margin-top: 16px; margin-bottom: 10px; font-weight: 700; color: #3A3A3A; font-size: 16px; }

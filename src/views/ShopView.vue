@@ -1,30 +1,61 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { productApi } from '@/api/product';
 
 // 상품 데이터
-const products = ref([
-  { id: 1, category: '사료/간식', brand: '네이처키친', name: '프리미엄 유기농 강아지 사료 2kg', price: '28,900', originPrice: '34,000', discount: '15%', isBest: true },
-  { id: 2, category: '의류/패션', brand: '멍멍패션', name: '따뜻한 털안감 체크무늬 겨울 패딩', price: '19,900', originPrice: '29,000', discount: '30%', isBest: false },
-  { id: 3, category: '사료/간식', brand: '고메펫', name: '국산 닭가슴살 수제 간식 100g', price: '9,900', originPrice: '12,000', discount: '17%', isBest: true },
-  { id: 4, category: '장난감', brand: '플레이독', name: '치석제거에 좋은 면로프 토이', price: '5,500', originPrice: '8,000', discount: '31%', isBest: false },
-  { id: 5, category: '리빙/하우스', brand: '꿀잠펫', name: '극세사 마카롱 펫 베드', price: '35,000', originPrice: '42,000', discount: '16%', isBest: true },
-]);
+const products = ref([]);
+const isLoading = ref(false);
 
 const isEventPage = ref(false);
 const selectedCategory = ref('전체');
+
+const fetchProducts = async () => {
+    isLoading.value = true;
+    try {
+        const params = {};
+        if (selectedCategory.value !== '전체') {
+            params.category = selectedCategory.value;
+        }
+        
+        const response = await productApi.getProducts(params);
+        
+        // 백엔드 데이터를 프론트엔드 포맷으로 매핑
+        products.value = response.data.map(p => ({
+            id: p.id,
+            category: p.category_name,
+            brand: 'Cats&Dogs', // 브랜드 정보 없음
+            name: p.title,
+            price: p.base_price.toLocaleString(), // 콤마 포맷팅
+            originPrice: null, // 할인 전 가격 정보 없음
+            discount: null, // 할인율 정보 없음
+            isBest: false, // 베스트 여부 정보 없음
+            img: p.main_image || null // 이미지 URL
+        }));
+    } catch (error) {
+        console.error('Failed to fetch products:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
 
 const setCategory = (categoryName) => {
   selectedCategory.value = categoryName;
   isEventPage.value = false; 
 };
 
+// 카테고리 변경 감지
+watch(selectedCategory, () => {
+    fetchProducts();
+});
+
+onMounted(() => {
+    fetchProducts();
+});
+
 const showEventPage = () => { isEventPage.value = true; };
 const goBackToShop = () => { isEventPage.value = false; };
 
-const filteredProducts = computed(() => {
-  if (selectedCategory.value === '전체') return products.value;
-  return products.value.filter(p => p.category === selectedCategory.value);
-});
+const filteredProducts = computed(() => products.value);
 
 const top5Products = computed(() => [...products.value].slice(0, 5));
 </script>
@@ -89,7 +120,8 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
           <div class="product-grid">
             <router-link v-for="product in filteredProducts" :key="product.id" :to="`/shop/${product.id}`" class="product-card">
               <div class="prod-thumb-box">
-                <div class="img-placeholder"><span class="material-icons-round" style="font-size:48px; color:#ccc">image</span></div>
+                <img v-if="product.img" :src="product.img" alt="상품 이미지" style="width:100%; height:100%; object-fit:cover;">
+                <div v-else class="img-placeholder"><span class="material-icons-round" style="font-size:48px; color:#ccc">image</span></div>
               </div>
               <div class="prod-info">
                 <div class="prod-brand">{{ product.brand }}</div>
@@ -115,7 +147,8 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
             <router-link v-for="(product, index) in top5Products" :key="product.id" :to="`/shop/${product.id}`" class="product-card card-event">
               <div class="event-rank">{{ index + 1 }}</div>
               <div class="prod-thumb-box box-event">
-                <div class="img-placeholder"><span class="material-icons-round">redeem</span></div>
+                <img v-if="product.img" :src="product.img" alt="상품 이미지" style="width:100%; height:100%; object-fit:cover;">
+                <div v-else class="img-placeholder"><span class="material-icons-round">redeem</span></div>
               </div>
               <div class="prod-info">
                 <div class="prod-name">{{ product.name }}</div>
