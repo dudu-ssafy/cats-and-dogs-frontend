@@ -18,6 +18,9 @@ const fetchShorts = async () => {
             comments: video.comments_count,
             isLiked: video.is_liked,
         }));
+        if (videos.value.length > 0) {
+            selectedVideo.value = videos.value[0];
+        }
     } catch (error) {
         console.error('Failed to fetch shorts:', error);
     }
@@ -28,9 +31,37 @@ onMounted(() => {
 });
 
 const showCommentDrawer = ref(false);
+const selectedVideo = ref(null);
+const newComment = ref('');
 
-const toggleComments = () => {
+const toggleComments = async (video) => {
+    if (video) {
+        selectedVideo.value = video;
+        if (!showCommentDrawer.value) {
+            await fetchComments(video);
+        }
+    }
     showCommentDrawer.value = !showCommentDrawer.value;
+};
+
+const submitComment = async () => {
+    if (!newComment.value.trim() || !selectedVideo.value) return;
+    
+    try {
+        await shortsApi.createComment(selectedVideo.value.id, newComment.value);
+        
+        // 댓글 작성 후 목록 갱신을 위해 상세 정보를 다시 가져옴
+        const response = await shortsApi.getShortsDetail(selectedVideo.value.id);
+        selectedVideo.value.commentList = response.data.comments;
+        selectedVideo.value.comments = response.data.comments.length;
+        
+        newComment.value = ''; // 입력창 초기화
+    } catch (error) {
+        console.error('Failed to submit comment:', error);
+        if (error.response?.status === 401) {
+            alert('댓글을 작성하려면 로그인이 필요합니다.');
+        }
+    }
 };
 
 const toggleLike = async (video) => {
@@ -46,14 +77,37 @@ const toggleLike = async (video) => {
     }
 };
 
-
-
 const togglePlay = (event) => {
     const videoEl = event.target;
     if (videoEl.paused) {
         videoEl.play();
     } else {
         videoEl.pause();
+    }
+};
+
+const handleScroll = (event) => {
+    const container = event.target;
+    const index = Math.round(container.scrollTop / container.clientHeight);
+    const activeVideo = videos.value[index];
+
+    if (activeVideo && (!selectedVideo.value || selectedVideo.value.id !== activeVideo.id)) {
+        selectedVideo.value = activeVideo;
+        
+        // 댓글창이 열려있다면 새 영상의 댓글을 불러옴
+        if (showCommentDrawer.value) {
+            fetchComments(activeVideo);
+        }
+    }
+};
+
+const fetchComments = async (video) => {
+    try {
+        const response = await shortsApi.getShortsDetail(video.id);
+        video.commentList = response.data.comments;
+        video.comments = response.data.comments.length;
+    } catch (error) {
+        console.error('Failed to fetch comments:', error);
     }
 };
 </script>
@@ -64,7 +118,7 @@ const togglePlay = (event) => {
     <div class="center-wrapper">
         
         <div class="mobile-frame">
-            <div class="video-scroll-container">
+            <div class="video-scroll-container" @scroll="handleScroll">
                 <div 
                     v-for="video in videos" 
                     :key="video.id" 
@@ -102,7 +156,7 @@ const togglePlay = (event) => {
                             <span class="cnt">{{ video.likes }}</span>
                         </button>
                         
-                        <button class="act-btn" @click="toggleComments" :class="{ active: showCommentDrawer }">
+                        <button class="act-btn" @click="toggleComments(video)" :class="{ active: showCommentDrawer && selectedVideo?.id === video.id }">
                             <span class="material-icons-round icon">mode_comment</span>
                             <span class="cnt">{{ video.comments }}</span>
                         </button>
@@ -123,27 +177,34 @@ const togglePlay = (event) => {
         <div class="side-drawer" :class="{ open: showCommentDrawer }">
             <div class="drawer-inner">
                 <div class="drawer-head">
-                    <span>댓글 248</span>
-                    <span class="material-icons-round close-btn" @click="toggleComments">close</span>
+                    <span>댓글 {{ selectedVideo?.comments }}</span>
+                    <span class="material-icons-round close-btn" @click="toggleComments(null)">close</span>
                 </div>
                 
                 <div class="drawer-body">
-                    <div class="cmt-row" v-for="i in 12" :key="i">
-                        <div class="cmt-pf"></div>
-                        <div class="cmt-data">
-                            <div class="cmt-usr">유저{{i}} <span class="time">1분전</span></div>
-                            <div class="cmt-msg">완전 힐링되네요! 😍 영상 더 올려주세요.</div>
+                    <div v-if="selectedVideo?.commentList && selectedVideo.commentList.length > 0">
+                        <div class="cmt-row" v-for="comment in selectedVideo.commentList" :key="comment.id">
+                            <img :src="comment.author.profile_image || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80'" class="cmt-pf">
+                            <div class="cmt-data">
+                                <div class="cmt-usr">{{ comment.author.username }} <span class="time">{{ new Date(comment.created_at).toLocaleString() }}</span></div>
+                                <div class="cmt-msg">{{ comment.content }}</div>
+                            </div>
                         </div>
-                        <div class="cmt-heart">
-                            <span class="material-icons-round">favorite_border</span>
-                            <span style="font-size:10px">2</span>
-                        </div>
+                    </div>
+                    <div v-else class="empty-msg" style="padding: 40px; text-align: center; color: #999;">
+                        첫 댓글을 남겨보세요!
                     </div>
                 </div>
 
                 <div class="drawer-input">
-                    <input type="text" placeholder="댓글 입력..." class="inp">
-                    <button class="send">게시</button>
+                    <input 
+                        type="text" 
+                        placeholder="댓글 입력..." 
+                        class="inp" 
+                        v-model="newComment"
+                        @keyup.enter="submitComment"
+                    >
+                    <button class="send" @click="submitComment">게시</button>
                 </div>
             </div>
         </div>
