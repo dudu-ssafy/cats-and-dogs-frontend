@@ -115,7 +115,7 @@ onMounted(() => {
         <div class="info-area">
             <div class="badge">BEST</div>
             <p class="p-brand">{{ product.brand }}</p>
-            <h1 class="p-title">{{ product.name }} (상품번호: {{ productId }})</h1>
+            <h1 class="p-title">{{ product.name }}</h1>
             
             <div class="p-price-wrap">
                 <span class="p-price">{{ (product.price || 0).toLocaleString() }}</span> <span class="p-unit">원</span>
