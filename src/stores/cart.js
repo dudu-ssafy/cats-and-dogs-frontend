@@ -1,57 +1,78 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import cartApi from '@/api/cart';
 
 export const useCartStore = defineStore('cart', () => {
-  const cartItems = ref([
-    { 
-      id: 1, 
-      brand: '네이처키친', 
-      name: '프리미엄 사료', 
-      price: 28900, 
-      quantity: 5, // 👈 합치면 15가 나와야 함
-      image: 'https://placehold.co/100x100',
-      selected: true 
-    },
-    { 
-      id: 2, 
-      brand: '멍멍패션', 
-      name: '겨울 패딩', 
-      price: 19900, 
-      quantity: 10, 
-      image: 'https://placehold.co/100x100',
-      selected: true 
-    }
-  ]);
+  // State
+  const cartItems = ref([]);
+  const isLoading = ref(false);
 
-  // ✅ 1. 종류(length)가 아니라 '수량(quantity)'의 합계를 구함
-  // Number()를 붙여서 문자열로 변하는 것을 방지합니다.
+  // Getter: 장바구니 총 수량
   const cartCount = computed(() => {
     return cartItems.value.reduce((total, item) => total + Number(item.quantity || 0), 0);
   });
-  
+
+  // Getter: 장바구니 총 금액
   const totalProductPrice = computed(() => {
     return cartItems.value
       .filter(item => item.selected)
-      .reduce((sum, item) => sum + (item.price * Number(item.quantity)), 0);
+      .reduce((sum, item) => {
+        // 백엔드 구조에 맞게 계산: (기본가 + 옵션가) * 수량
+        // 백엔드 응답에서 제품 정보(기본가)를 알 수 없으나, 
+        // 아까 본 BasketSerializer를 보면 `item.product.base_price` 등이 포함되어 있지 않고 
+        // total_price는 전체 합계만 줌.
+        // 따라서 프론트에서 계산하려면 BasketItemSerializer에 단가 정보가 있어야 함.
+        // 현재 BasketItemSerializer fields: ['id', 'option_id', 'quantity', 'product_name', 'option_value', 'price_at_addition']
+        // price_at_addition(추가 시점 가격) 사용.
+        const price = Number(item.price_at_addition || 0);
+        return sum + (price * Number(item.quantity));
+      }, 0);
   });
 
-  const addToCart = (product, count) => {
-    const existingItem = cartItems.value.find(item => item.id === product.id);
-    if (existingItem) {
-      // ✅ 수량 추가 시 숫자 타입 강제
-      existingItem.quantity = Number(existingItem.quantity) + Number(count);
-    } else {
-      cartItems.value.push({
-        ...product,
-        quantity: Number(count),
-        selected: true
-      });
+  // Action: 장바구니 목록 조회
+  const fetchCart = async () => {
+    isLoading.value = true;
+    try {
+      const response = await cartApi.getCart();
+      // response.data 구조: { items: [], total_items_count, total_price, ... }
+      if (response.data && response.data.items) {
+        cartItems.value = response.data.items.map(item => ({
+          ...item,
+          selected: true // 기본 선택 상태
+        }));
+      } else {
+        cartItems.value = [];
+      }
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+    } finally {
+      isLoading.value = false;
     }
   };
 
-  const removeItem = (id) => {
-    cartItems.value = cartItems.value.filter(item => item.id !== id);
+  // Action: 장바구니 담기
+  const addToCart = async (optionId, quantity, productId = null) => {
+    try {
+      await cartApi.addToCart(optionId, quantity, productId);
+      await fetchCart(); // 목록 갱신
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+      alert('장바구니 담기에 실패했습니다.');
+      throw error; // UI에서 처리할 수 있도록 throw
+    }
   };
 
-  return { cartItems, cartCount, totalProductPrice, addToCart, removeItem }
+  // Action: 장바구니 삭제
+  const removeItem = async (itemId) => {
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      await cartApi.removeFromCart(itemId);
+      await fetchCart(); // 목록 갱신
+    } catch (error) {
+      console.error('Failed to remove item:', error);
+      alert('삭제에 실패했습니다.');
+    }
+  };
+
+  return { cartItems, isLoading, cartCount, totalProductPrice, fetchCart, addToCart, removeItem }
 })

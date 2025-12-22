@@ -1,16 +1,16 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router'; // 👈 라우터 추가
 import { useCartStore } from '@/stores/cart';
 
 const store = useCartStore();
 const router = useRouter(); // 👈 라우터 사용
 
-// 수량 조절 함수 (직접 store 데이터 수정)
-const increase = (item) => item.quantity++;
-const decrease = (item) => {
-  if (item.quantity > 1) item.quantity--;
-};
+// 수량 조절 함수 (현재 백엔드 미지원)
+// const increase = (item) => item.quantity++;
+// const decrease = (item) => {
+//   if (item.quantity > 1) item.quantity--;
+// };
 
 // 선택 삭제 로직 수정
 const removeSelected = () => {
@@ -37,6 +37,10 @@ const goToOrder = () => {
   }
   router.push({ name: 'ShopOrder'}); // 라우터 설정에 따라 '/order' 또는 { name: 'Order' }로 변경 가능
 };
+
+onMounted(() => {
+    store.fetchCart();
+});
 </script>
 
 <template>
@@ -48,22 +52,26 @@ const goToOrder = () => {
           <div class="cart-list-box">
               <div class="cart-item" v-for="item in store.cartItems" :key="item.id">
                   <input type="checkbox" v-model="item.selected">
-                  <img :src="item.image" class="item-thumb">
+                  <!-- 백엔드 BasketItemSerializer에 이미지 필드가 없으므로, 현재는 플레이스홀더 사용. 
+                       추후 Serializer 수정 필요하거나 product_id로 이미지 조회 로직 필요. 
+                       일단은 기본 이미지 처리 -->
+                  <img :src="'https://via.placeholder.com/100'" class="item-thumb">
                   
                   <div class="item-info">
-                      <div class="item-brand">{{ item.brand }}</div>
-                      <div class="item-name">{{ item.name }}</div>
-                      <span class="item-opt">옵션: {{ item.option }}</span>
+                      <div class="item-brand">Cats&Dogs</div>
+                      <div class="item-name">{{ item.product_name }}</div>
+                      <span class="item-opt">옵션: {{ item.option_value }}</span>
                   </div>
 
                   <div class="qty-box">
-                      <button class="qty-btn" @click="decrease(item)">-</button>
+                      <!-- 수량 변경 API 미구현으로 버튼 비활성화 또는 단순 표시 -->
+                      <!-- <button class="qty-btn" @click="decrease(item)">-</button> -->
                       <input type="text" :value="item.quantity" class="qty-input" readonly>
-                      <button class="qty-btn" @click="increase(item)">+</button>
+                      <!-- <button class="qty-btn" @click="increase(item)">+</button> -->
                   </div>
 
                   <div class="item-price-area">
-                      <span class="item-price">{{ formatPrice(item.price * item.quantity) }}원</span>
+                      <span class="item-price">{{ formatPrice(item.price_at_addition * item.quantity) }}원</span>
                       <span class="material-icons-round btn-delete" @click="store.removeItem(item.id)">close</span>
                   </div>
               </div>
