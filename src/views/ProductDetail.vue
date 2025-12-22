@@ -1,6 +1,6 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { productApi } from '@/api/product';
 
 // [1] 장바구니 스토어 가져오기
@@ -12,6 +12,51 @@ const productId = Number(route.params.id); // ID 숫자 변환
 
 // [2] 스토어 사용 설정
 const cartStore = useCartStore();
+
+// 옵션 선택 로직
+const selectedOptionId = ref(null);
+
+// ✅ [수정] 장바구니 담기 버튼 함수
+const addCart = async () => {
+    if(!product.value) return;
+
+    // 옵션 유효성 검사 (옵션이 있는 상품인데 선택 안 한 경우)
+    if (product.value.options && product.value.options.length > 0 && !selectedOptionId.value) {
+        alert('상품 옵션을 선택해주세요.');
+        return;
+    }
+
+    try {
+        // 1. 스토어의 addToCart 함수 실행
+        // 옵션이 있으면 optionId 전달, 없으면 null 전달 (backend에서 처리 필요)
+        // 현재 backend는 product_option_id 필수이므로, 
+        // 옵션이 없는 상품(Sled 등)을 위해 product_id를 함께 전달하여 처리하도록 구조 변경 필요.
+        // 일단 frontend에서는 selectedOptionId가 null일 경우 product.id를 활용하도록 API/Store 수정 전제로 호출.
+        
+        await cartStore.addToCart(selectedOptionId.value, quantity.value, product.value.id);
+        
+        // 2. 알림 및 이동
+        if(confirm("장바구니에 담았습니다. 이동하시겠습니까?")) {
+            router.push('/cart'); 
+        }
+    } catch (e) {
+        // 이미 store에서 에러 처리 함
+    }
+};
+
+// 수량 조절 로직
+const quantity = ref(1);
+const increase = () => quantity.value++;
+const decrease = () => { if(quantity.value > 1) quantity.value--; };
+
+// 구매하기 버튼
+const goOrder = () => {
+    if(!product.value) return;
+    router.push('/shop/order'); 
+};
+
+
+const productOptions = computed(() => product.value?.options || []);
 
 // 2. 상품 정보
 const product = ref(null);
@@ -29,40 +74,24 @@ const fetchProductDetail = async () => {
 
         product.value = {
             id: data.id,
-            brand: 'Cats&Dogs', // 브랜드 정보 없음
+            brand: 'Cats&Dogs',
             name: data.title,
-            price: data.base_price, // 숫자 그대로 사용 (계산용)
-            img: mainImage
+            price: data.base_price, 
+            img: mainImage,
+            options: data.options // API에서 받은 옵션 목록 저장
         };
+        
+        // 옵션이 1개뿐이라면 자동 선택 기능 (편의성)
+        if (data.options && data.options.length === 1) {
+            selectedOptionId.value = data.options[0].id;
+        }
+
     } catch (error) {
         console.error('Failed to fetch product details:', error);
         alert('상품 정보를 불러오는데 실패했습니다.');
         router.back();
     } finally {
         isLoading.value = false;
-    }
-};
-
-// 수량 조절 로직
-const quantity = ref(1);
-const increase = () => quantity.value++;
-const decrease = () => { if(quantity.value > 1) quantity.value--; };
-
-// 구매하기 버튼
-const goOrder = () => {
-    if(!product.value) return;
-    router.push('/shop/order'); 
-};
-
-// ✅ [추가] 장바구니 담기 버튼 함수
-const addCart = () => {
-    if(!product.value) return;
-    // 1. 스토어의 addToCart 함수 실행 (상품정보 + 수량 전달)
-    cartStore.addToCart(product.value, quantity.value);
-    
-    // 2. 알림 및 이동
-    if(confirm("장바구니에 담았습니다. 이동하시겠습니까?")) {
-        router.push('/cart'); // 장바구니 페이지로 이동
     }
 };
 
@@ -86,11 +115,26 @@ onMounted(() => {
         <div class="info-area">
             <div class="badge">BEST</div>
             <p class="p-brand">{{ product.brand }}</p>
-            <h1 class="p-title">{{ product.name }} (상품번호: {{ productId }})</h1>
+            <h1 class="p-title">{{ product.name }}</h1>
             
             <div class="p-price-wrap">
-                <span class="p-price">{{ product.price.toLocaleString() }}</span> <span class="p-unit">원</span>
+                <span class="p-price">{{ (product.price || 0).toLocaleString() }}</span> <span class="p-unit">원</span>
             </div>
+
+            <!-- 옵션 선택 영역 -->
+            <div class="option-area" v-if="product.options && product.options.length > 0">
+                <label class="opt-label">옵션 선택</label>
+                <select v-model="selectedOptionId" class="opt-select">
+                    <option :value="null" disabled>옵션을 선택해주세요</option>
+                    <option v-for="opt in product.options" :key="opt.id" :value="opt.id" :disabled="opt.stock <= 0">
+                        {{ opt.name }}: {{ opt.value }} 
+                        <template v-if="opt.additional_price > 0">(+{{ opt.additional_price.toLocaleString() }}원)</template>
+                        <template v-if="opt.stock <= 0"> (품절)</template>
+                    </option>
+                </select>
+            </div>
+            
+            <div class="divider"></div>
 
             <div class="option-box">
                 <div class="opt-row">
@@ -159,6 +203,13 @@ onMounted(() => {
 .p-title { font-size: 32px; font-weight: 800; line-height: 1.3; margin-bottom: 24px; }
 
 .p-price-wrap { border-bottom: 1px solid #E5E7EB; padding-bottom: 24px; margin-bottom: 24px; }
+.option-area { margin-bottom: 24px; }
+.opt-label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 15px; }
+.opt-select { 
+    width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #DDD; 
+    font-size: 15px; font-family: 'NanumSquareRound'; outline: none;
+}
+.divider { height: 1px; background: #EEE; margin: 0 0 30px; }
 .p-price { font-size: 32px; font-weight: 800; color: #FF8F00; }
 .p-unit { font-size: 20px; color: #4B5563; font-weight: 700; }
 

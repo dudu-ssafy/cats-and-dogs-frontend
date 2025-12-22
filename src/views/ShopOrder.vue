@@ -37,6 +37,11 @@ const handlePayment = () => {
     router.push('/');
   }
 };
+// 5. 마운트 시 데이터 갱신
+import { onMounted } from 'vue';
+onMounted(() => {
+    store.fetchCart();
+});
 </script>
 
 <template>
@@ -79,12 +84,14 @@ const handlePayment = () => {
             </h3>
             
             <div class="order-item" v-for="item in store.cartItems" :key="item.id">
-              <img :src="item.image" class="item-thumb">
+              <!-- 이미지: 백엔드 필드 없음, 임시 처리 -->
+              <img :src="'https://via.placeholder.com/70'" class="item-thumb">
               <div class="item-info">
-                <p class="item-name">{{ item.name }}</p>
-                <p class="item-opt">옵션: {{ item.option }} / {{ item.quantity }}개</p>
+                <p class="item-name">{{ item.product_name }}</p>
+                <p class="item-opt">옵션: {{ item.option_value || '없음' }} / {{ item.quantity }}개</p>
               </div>
-              <div class="item-price">{{ formatPrice(item.price * item.quantity) }}원</div>
+              <!-- 가격 필드 수정: item.price -> item.price_at_addition -->
+              <div class="item-price">{{ formatPrice(item.price_at_addition * item.quantity) }}원</div>
             </div>
 
             <div v-if="store.cartItems.length === 0" class="empty-msg">
