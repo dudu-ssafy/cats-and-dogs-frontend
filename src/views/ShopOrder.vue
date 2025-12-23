@@ -22,10 +22,10 @@ import { paymentApi } from '@/api/payment';
 
 // 4. 결제하기 처리 함수
 const handlePayment = async () => {
-  // if (store.cartItems.length === 0) {
-  //   alert('결제할 상품이 장바구니에 없습니다.');
-  //   return;
-  // }
+  if (store.cartItems.length === 0) {
+    alert('결제할 상품이 장바구니에 없습니다.');
+    return;
+  }
 
   const confirmMsg = `${formatPrice(finalPrice.value)}원을 결제하시겠습니까?`;
   
