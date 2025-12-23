@@ -1,14 +1,46 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import api from '@/api';
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 
 const email = ref('');
 const password = ref('');
+
+onMounted(async () => {
+    // URL에 토큰이 포함되어 있는지 확인 (OAuth 콜백 처리)
+    const access = route.query.access;
+    const refresh = route.query.refresh;
+
+    if (access && refresh) {
+        try {
+            localStorage.setItem('access_token', access);
+            localStorage.setItem('refresh_token', refresh);
+            await userStore.mypage();
+
+            
+            // 유저 정보 가져오기
+            const response = await api.get('users/profile/');
+            userStore.user = {
+                ...response.data,
+                profileImg: response.data.profile_image,
+                access,
+                refresh
+            };
+            localStorage.setItem('user-info', JSON.stringify(userStore.user));
+            
+            alert(`소셜 로그인 성공! 환영합니다, ${userStore.user.username}님! 🐾`);
+            router.push('/');
+        } catch (error) {
+            console.error('Social login failed:', error);
+            alert('소셜 로그인 처리 중 오류가 발생했습니다.');
+        }
+    }
+});
 
 const handleLogin = async () => {
     if (!email.value || !password.value) {
@@ -30,6 +62,12 @@ const handleLogin = async () => {
         email.value = '';
         password.value = '';
     }
+};
+
+const loginSocial = (provider) => {
+    // 🔥 중요: axios(api.get) 대신 브라우저 페이지 자체를 이동시켜야 합니다.
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1/';
+    window.location.href = `${backendUrl}users/oauth_login/?to=${provider}`;
 };
 </script>
 
@@ -71,8 +109,8 @@ const handleLogin = async () => {
             <div class="divider"><span>또는 SNS로 시작하기</span></div>
 
             <div class="social-buttons">
-                <button class="social-btn" title="Naver"><img src="/login-icon/NAVER_login_Light_KR_green_icon_H56.png" class="social-icon"></button>
-                <button class="social-btn" title="Kakao"><img src="https://cdn-icons-png.flaticon.com/512/3669/3669973.png" class="social-icon"></button>
+                <button @click="loginSocial('naver')" class="social-btn" title="Naver"><img src="/login-icon/NAVER_login_Light_KR_green_icon_H56.png" class="social-icon"></button>
+                <button @click="loginSocial('google')" class="social-btn" title="Google"><img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" class="social-icon"></button>
             </div>
 
             <div class="bottom-link">

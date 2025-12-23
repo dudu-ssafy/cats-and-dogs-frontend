@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '@/stores/user';
-import { useRouter } from 'vue-router'; 
+import { useRouter } from 'vue-router'
+import api from '@/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -13,13 +14,7 @@ const step = ref(0);
 const fileInputRef = ref(null);
 
 // 반려동물 커뮤니티 컨셉에 맞춘 숏츠 데이터
-const likedShorts = ref([
-    { id: 1, title: '솜사탕 같은 포메라니안 산책 🐾', thumbnail: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400', views: '1.5만회' },
-    { id: 2, title: '고양이 꾹꾹이 ASMR 🐱', thumbnail: 'https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?w=400', views: '8.2천회' },
-    { id: 3, title: '강아지 수제 간식 폭풍 먹방 🦴', thumbnail: 'https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=400', views: '2.1만회' },
-    { id: 4, title: '우리 집 강아지 천재성 테스트 🎓', thumbnail: 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=400', views: '12.4만회' },
-    { id: 5, title: '졸음 참는 아기 고양이 💤', thumbnail: 'https://images.unsplash.com/photo-1535930891776-0c2dfb7fda1a?w=400', views: '3.5천회' },
-]);
+const likedShorts = ref([]);
 
 // 숏츠 스크롤 제어 로직
 const shortsScrollRef = ref(null);
@@ -48,7 +43,18 @@ onMounted(() => {
     } else {
         step.value = 0;
     }
+    fetchLikedShorts();
 });
+
+const fetchLikedShorts = async () => {
+    try {
+        const response = await api.get('shorts/find_like_shorts/');
+        likedShorts.value = response.data;
+        console.log(likedShorts.value);
+    } catch (error) {
+        console.error('Failed to fetch liked shorts:', error);
+    }
+};
 
 const form = ref({
     petName: '',
@@ -61,7 +67,7 @@ const form = ref({
     address: '',
     description: '',
     weight: '',
-    petImgUrl: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=800&q=80',
+    petImgUrl: userStore.user.profileImg,
 });
 
 const userForm = ref({
@@ -121,8 +127,13 @@ const triggerFileUpload = () => {
 const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+        // 프리뷰를 위해 로컬에서 먼저 읽기
         const reader = new FileReader();
         reader.onload = (e) => {
+            const previewUrl = e.target.result;
+            form.value.petImgUrl = previewUrl;
+            // 전역 유저 프로필 이미지도 업데이트하여 즉시 반영
+            userStore.updateUser({ profileImg: previewUrl });
             const newImgUrl = e.target.result;
             form.value.petImgUrl = newImgUrl;
             userStore.registerPet({
@@ -131,6 +142,19 @@ const handleFileChange = (event) => {
             });
         };
         reader.readAsDataURL(file);
+
+        const formData = new FormData();
+        formData.append('image', file);
+        api.post('/users/profile_image_upload/', formData)
+        .then(response => {
+            console.log('Upload started:', response.data);
+            // 업로드가 완료되면 백엔드 Task에서 유저 프로필을 업데이트하므로, 
+            // 나중에 다시 조회하거나 알림을 줄 수 있습니다.
+        })
+        .catch(error => {
+            console.error('Upload failed:', error.response.data);
+            alert('이미지 업로드 중 오류가 발생했습니다.');
+        });
     }
 };
 
@@ -209,8 +233,7 @@ const goRegistration = () => router.push('/my-page/license');
 
             <div class="card profile-card">
                 <div class="img-wrapper">
-                    <img :src="myPet.petImgUrl" alt="프로필">
-                    
+                    <img :src="userStore.user.profileImg" alt="프로필">
                     <input type="file" ref="fileInputRef" style="display: none" accept="image/*" @change="handleFileChange">
                     <button class="c-camera-btn" @click="triggerFileUpload">
                         <span class="material-icons-round">photo_camera</span>
@@ -251,7 +274,7 @@ const goRegistration = () => router.push('/my-page/license');
                     <div class="c-shorts-container is-snapped" ref="shortsScrollRef">
                         <div class="c-shorts-list">
                             <div v-for="shorts in likedShorts" :key="shorts.id" class="c-shorts-item">
-                                <div class="c-shorts-item__screen" :style="{ backgroundImage: `url(${shorts.thumbnail})` }">
+                                <div class="c-shorts-item__screen" :style="{ backgroundImage: `url(${shorts.thumbnail_url})` }">
                                     <div class="play-overlay">
                                         <span class="material-icons-round">play_arrow</span>
                                     </div>
