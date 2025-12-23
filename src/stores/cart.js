@@ -74,5 +74,29 @@ export const useCartStore = defineStore('cart', () => {
     }
   };
 
-  return { cartItems, isLoading, cartCount, totalProductPrice, fetchCart, addToCart, removeItem }
+  // Action: 수량 변경
+  const updateQuantity = async (itemId, newQuantity) => {
+    if (newQuantity < 1) return;
+
+    // 1. 즉시 화면 반영 (낙관적 업데이트)
+    const item = cartItems.value.find(i => i.id === itemId);
+    const oldQuantity = item ? item.quantity : 1;
+    if (item) {
+      item.quantity = newQuantity;
+    }
+
+    try {
+      // 2. 서버 요청
+      await cartApi.updateQuantity(itemId, newQuantity);
+      // 3. 서버 데이터로 동기화 (선택적)
+      await fetchCart();
+    } catch (error) {
+      console.error('Failed to update quantity:', error);
+      alert('수량 변경에 실패했습니다.');
+      // 실패 시 원복
+      if (item) item.quantity = oldQuantity;
+    }
+  };
+
+  return { cartItems, isLoading, cartCount, totalProductPrice, fetchCart, addToCart, removeItem, updateQuantity }
 })
