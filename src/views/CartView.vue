@@ -7,10 +7,15 @@ const store = useCartStore();
 const router = useRouter(); // 👈 라우터 사용
 
 // 수량 조절 함수 (현재 백엔드 미지원)
-// const increase = (item) => item.quantity++;
-// const decrease = (item) => {
-//   if (item.quantity > 1) item.quantity--;
-// };
+// 수량 조절 함수
+const increase = (item) => {
+  store.updateQuantity(item.id, item.quantity + 1);
+};
+const decrease = (item) => {
+  if (item.quantity > 1) {
+    store.updateQuantity(item.id, item.quantity - 1);
+  }
+};
 
 // 선택 삭제 로직 수정
 const removeSelected = () => {
@@ -52,10 +57,8 @@ onMounted(() => {
           <div class="cart-list-box">
               <div class="cart-item" v-for="item in store.cartItems" :key="item.id">
                   <input type="checkbox" v-model="item.selected">
-                  <!-- 백엔드 BasketItemSerializer에 이미지 필드가 없으므로, 현재는 플레이스홀더 사용. 
-                       추후 Serializer 수정 필요하거나 product_id로 이미지 조회 로직 필요. 
-                       일단은 기본 이미지 처리 -->
-                  <img :src="'https://via.placeholder.com/100'" class="item-thumb">
+                  <!-- 백엔드에서 main_image 필드를 받아옵니다. 없으면 플레이스홀더 -->
+                  <img :src="item.main_image || 'https://via.placeholder.com/100'" class="item-thumb">
                   
                   <div class="item-info">
                       <div class="item-brand">Cats&Dogs</div>
@@ -65,9 +68,9 @@ onMounted(() => {
 
                   <div class="qty-box">
                       <!-- 수량 변경 API 미구현으로 버튼 비활성화 또는 단순 표시 -->
-                      <!-- <button class="qty-btn" @click="decrease(item)">-</button> -->
+                      <button class="qty-btn" @click="decrease(item)">-</button>
                       <input type="text" :value="item.quantity" class="qty-input" readonly>
-                      <!-- <button class="qty-btn" @click="increase(item)">+</button> -->
+                      <button class="qty-btn" @click="increase(item)">+</button>
                   </div>
 
                   <div class="item-price-area">

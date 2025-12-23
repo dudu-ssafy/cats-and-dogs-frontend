@@ -120,39 +120,59 @@
           <!-- Age Calculator (Realistic Retro Calculator Theme) -->
           <div class="age-calc-section">
           <!-- Age Calculator (Simple Cake/Party Theme) -->
+          <!-- Age Calculator - Wide Card Theme -->
           <div class="age-calc-section">
-            <div class="age-card">
-               <div class="card-header">
-                  <img :src="partyImg" class="card-photo" alt="Party" />
-                  <h3>우리 아이 나이 계산기</h3>
-               </div>
-               
-               <div class="type-selector">
-                  <button class="type-btn" :class="{ active: petType === 'dog' }" @click="pressSelect('dog')">🐶 강아지</button>
-                  <button class="type-btn" :class="{ active: petType === 'cat' }" @click="pressSelect('cat')">🐱 고양이</button>
-               </div>
+            <div class="age-wide-card">
+              <!-- Left: Input Controls -->
+              <div class="calc-left">
+                <h3 class="calc-title">우리 아이<br>나이 계산기</h3>
+                <p class="calc-desc">생년월일 8자리를 입력해주세요!</p>
+                
+                <div class="wide-type-selector">
+                   <button :class="{ active: petType === 'dog' }" @click="pressSelect('dog')">강아지</button>
+                   <button :class="{ active: petType === 'cat' }" @click="pressSelect('cat')">고양이</button>
+                </div>
 
-               <div class="display-area">
-                  <div class="input-display" :class="{ placeholder: !calcInput }">{{ displayScreen }}</div>
-               </div>
+                <div class="wide-input-group">
+                   <div class="input-wrapper">
+                       <input 
+                          type="text" 
+                          v-model="calcInput" 
+                          placeholder="예: 20230101" 
+                          maxlength="8"
+                          @keyup.enter="calculateAge"
+                       >
+                       <span class="material-icons-round calendar-icon" @click="openDatePicker">calendar_month</span>
+                   </div>
 
-               <div class="num-pad">
-                  <button class="num-btn" v-for="n in [7,8,9,4,5,6,1,2,3]" :key="n" @click="pressNum(n)">{{ n }}</button>
-                  <button class="num-btn" @click="pressNum(0)">0</button>
-                  <button class="action-btn del" @click="pressBack">⬅️</button>
-                  <button class="action-btn calc" @click="calculateAge">확인</button>
-               </div>
-               
-               <!-- Result Overlay (Cake Theme) -->
-               <div class="result-overlay" v-if="calculatedAge !== null">
-                  <div class="result-box">
-                      <div class="r-icon">🎉</div>
-                      <div class="r-title">사람 나이로는?</div>
-                      <div class="r-age">{{ calculatedAge }}세</div>
-                      <button class="r-close" @click="pressClear">다시하기</button>
-                  </div>
-               </div>
+                   <!-- Hidden Date Picker for Calendar Selection -->
+                   <input 
+                      type="date" 
+                      ref="datePicker"
+                      @input="onDatePicked"
+                      style="position:absolute; visibility:hidden; width:0; height:0;" 
+                   >
+                   
+                   <button @click="calculateAge">확인</button>
+                </div>
+              </div>
 
+              <!-- Right: Circular Result/Image Area -->
+              <div class="calc-right">
+                 <div class="result-circle">
+                    <!-- Default State: Image -->
+                    <div v-if="calculatedAge === null" class="default-view">
+                       <img :src="currentPetImg" alt="Pet" class="circle-img">
+                    </div>
+                    
+                    <!-- Result State: Age Display -->
+                    <div v-else class="result-view">
+                       <div class="res-label">사람 나이로</div>
+                       <div class="res-num">{{ calculatedAge }}세</div>
+                       <button class="res-reset" @click="pressClear">다시하기</button>
+                    </div>
+                 </div>
+              </div>
             </div>
           </div>
           </div>
@@ -202,11 +222,11 @@
 
       <div class="container"> <!-- Re-open second container -->
 
-        <h2 class="section-title reveal">오늘의 꿀팁 매거진 📰</h2>
+        <h2 class="section-title reveal">오늘의 꿀팁 매거진</h2>
         <section class="featured-article reveal">
           <div class="f-card">
             <div class="f-img-box">
-              <img :src="quizImg03" alt="산책하는 강아지">
+              <img :src="winterWalkImg" alt="산책하는 강아지">
             </div>
             <div class="f-content">
               <span class="f-tag">건강 관리</span>
@@ -219,15 +239,15 @@
               
               <ul class="f-tips-list">
                 <li>
-                  <strong>☀️ 가장 따뜻한 낮 시간에!</strong>
+                  <strong> 가장 따뜻한 낮 시간에!</strong>
                   <span>체온 유지를 위해 햇빛이 있는 12~2시 사이를 추천해요.</span>
                 </li>
                 <li>
-                  <strong>🧥 얇은 옷을 여러 겹!</strong>
+                  <strong> 얇은 옷을 여러 겹!</strong>
                   <span>두꺼운 패딩 하나보다 얇은 옷을 레이어드하는 게 활동성에 좋아요.</span>
                 </li>
                 <li>
-                  <strong>🐾 발바닥 보습 필수!</strong>
+                  <strong> 발바닥 보습 필수!</strong>
                   <span>차가운 땅과 염화칼슘으로부터 젤리를 보호하기 위해 산책 전후로 보습제를 발라주세요.</span>
                 </li>
               </ul>
@@ -253,6 +273,10 @@ import quizImg02 from '@/assets/images/nuwoseo-hapumhaneun-hoesaeg-julmunui-goya
 import quizImg03 from '@/assets/images/gwiyeoun-bodeo-kol-li-gang-ajiui-seutyudio-syas.jpg';
 import stickyImg from '@/assets/images/dark_christmas_cat.png'; 
 import partyImg from '@/assets/images/party_cat.jpg';
+import santaDogImg from '@/assets/images/santa_dog.png';
+import santaCatImg from '@/assets/images/santa_cat.png';
+import winterWalkImg from '@/assets/images/winter_walk_dog.png';
+
 const router = useRouter();
 const searchQuery = ref('');
 
@@ -319,8 +343,8 @@ const fetchBoardData = async () => {
 const petType = ref('dog');
 const calcInput = ref(''); // Stores "20231225" string
 const calculatedAge = ref(null); // Stores final age result
+const datePicker = ref(null);
 
-// Display formatting (YYYY-MM-DD)
 const displayScreen = computed(() => {
   if (calculatedAge.value !== null) {
       return `${calculatedAge.value}세`;
@@ -335,6 +359,10 @@ const displayScreen = computed(() => {
   if (raw.length > 4) formatted += '-' + raw.substring(4, 6);
   if (raw.length > 6) formatted += '-' + raw.substring(6, 8);
   return formatted;
+});
+
+const currentPetImg = computed(() => {
+    return petType.value === 'dog' ? santaDogImg : santaCatImg;
 });
 
 // Keypad Handlers
@@ -368,6 +396,23 @@ const pressSelect = (type) => {
     // Recalculate if possible
     if(calculatedAge.value !== null) calculateAge();
 }
+
+const openDatePicker = () => {
+    if(datePicker.value) {
+        if(datePicker.value.showPicker) {
+            datePicker.value.showPicker();
+        } else {
+            datePicker.value.click(); 
+        }
+    }
+};
+
+const onDatePicked = (event) => {
+    const val = event.target.value; // YYYY-MM-DD
+    if(val) {
+        calcInput.value = val.replace(/-/g, '');
+    }
+};
 
 const calculateAge = () => {
   if (calcInput.value.length !== 8) return;
@@ -422,25 +467,25 @@ const isFlipped = ref(false);
 
 const quizData = [
   {
-    img: quizImg01,
-    alt: '강아지 눈',
-    question: '강아지는 세상을<br>흑백으로만 본다?',
-    answer: 'X',
-    desc: '적록색맹과 비슷해요!<br>파란색과 노란색은 구분할 수 있어요.'
-  },
-  {
-    img: quizImg02,
-    alt: '우는 고양이',
-    question: '다 큰 고양이는<br>사람에게만 "야옹" 한다?',
-    answer: 'O',
-    desc: '고양이끼리는 눈빛과 냄새로 대화해요.<br>집사에게만 목소리를 내는 거랍니다!'
-  },
-  {
     img: quizImg03,
     alt: '강아지 코',
     question: '강아지 코 지문으로<br>신원 확인이 가능하다?',
     answer: 'O',
     desc: '사람의 지문처럼 강아지 "비문"도<br>모두 달라서 등록이 가능해요!'
+  },
+  {
+    img: quizImg02,
+    alt: '우는 고양이',
+    question: '다 큰 고양이는<br>사람에게만<br>"야옹" 한다?',
+    answer: 'O',
+    desc: '고양이끼리는 눈빛과 냄새로 대화해요.<br>집사에게만 목소리를 내는 거랍니다!'
+  },
+  {
+    img: quizImg01,
+    alt: '강아지 눈',
+    question: '강아지는 세상을<br>흑백으로만 본다?',
+    answer: 'X',
+    desc: '적록색맹과 비슷해요!<br>파란색과 노란색은 구분할 수 있어요.'
   }
 ];
 
@@ -546,7 +591,7 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 /* AI Section */
 .ai-section { display: flex; align-items: center; justify-content: space-between; gap: 60px; margin-bottom: 160px; }
 .ai-text { flex: 1; }
-.ai-text h2 { font-size: 52px; color: var(--text-brown-dark); margin-bottom: 20px; line-height: 1.25; }
+.ai-text h2 { font-size: 52px; color: var(--text-brown-dark); margin-bottom: 20px; line-height: 1.25; font-family: 'OneMobilePop', cursive; font-weight: normal; }
 .ai-text p { font-size: 19px; margin-bottom: 36px; line-height: 1.6; word-break: keep-all; }
 .modern-search {
     display: flex; align-items: center; background: #fff; padding: 6px 6px 6px 24px;
@@ -554,6 +599,7 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
     transition: 0.3s; border: 4px solid var(--soft-butter); box-shadow: var(--shadow-soft);
 }
 .modern-search:focus-within { border-color: var(--primary-honey); transform: scale(1.02); }
+
 .modern-search input { flex: 1; background: transparent; border: none; outline: none; font-size: 17px; font-family: var(--font-body); color: var(--text-brown-dark); height: 44px;}
 .search-icon-btn {
     width: 50px; height: 50px; background: var(--primary-honey); color: #fff; border-radius: 50%;
@@ -586,7 +632,7 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 
 /* Boards Section */
 /* Boards Section - Staggered Soft Layout */
-.section-title { font-size: 36px; color: var(--text-brown-dark); margin-bottom: 50px; text-align: center; font-family: var(--font-title); }
+.section-title { font-size: 36px; color: var(--text-brown-dark); margin-bottom: 50px; text-align: center; font-family: 'OneMobilePop', cursive; font-weight: normal; }
 
 .board-grid { 
     display: flex; flex-direction: column; gap: 60px; margin-bottom: 200px; 
@@ -613,7 +659,7 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 }
 
 .board-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 3px dashed #FFF176; padding-bottom: 16px; }
-.board-header h3 { font-size: 24px; color: var(--text-brown-dark); }
+.board-header h3 { font-size: 24px; color: var(--text-brown-dark); font-family: 'OneMobilePop', cursive; font-weight: normal; }
 .board-header span { font-size: 16px; color: var(--primary-honey); cursor: pointer; }
 .post-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #FFF3E0; cursor: pointer; transition: 0.2s; }
 .post-item:hover { color: var(--text-brown-dark); padding-left: 8px; }
@@ -623,59 +669,118 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 
 /* Banner */
 /* Age Calculator */
-/* Age Calculator - Realistic Retro Calculator Theme */
-.age-calc-section { margin-bottom: 160px; display: flex; justify-content: center; }
+/* Age Calculator - Wide Horizontal Theme */
+.age-calc-section { margin-bottom: 200px; display: flex; justify-content: center; }
 
-/* Age Calculator - Simple Party Theme */
-.age-calc-section { margin-bottom: 160px; display: flex; justify-content: center; }
-
-.age-card {
+.age-wide-card {
+    width: 750px; height: 380px;
     background: #FFF;
-    width: 320px; padding: 30px;
-    border-radius: 30px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+    border-radius: 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 60px;
+    border: 4px solid #FFF; /* Match Quiz style if needed, or just clean white */
+}
+
+/* Left Side */
+.calc-left { display: flex; flex-direction: column; align-items: flex-start; flex: 1; padding-right: 40px; }
+
+.calc-title { 
+    font-size: 32px; font-weight: normal; color: #333; line-height: 1.3; margin-bottom: 12px; font-family: 'OneMobilePop', cursive;
+}
+.calc-desc { font-size: 16px; color: #999; margin-bottom: 30px; font-weight: 700; }
+
+.wide-type-selector { 
+    display: flex; gap: 10px; margin-bottom: 24px; width: 100%;
+}
+.wide-type-selector button {
+    flex: 1; padding: 12px; border-radius: 12px; border: 2px solid #F0F0F0; background: #FAFAFA;
+    font-weight: 700; font-size: 16px; color: #BBB; transition: 0.2s; cursor: pointer;
+}
+.wide-type-selector button.active {
+    border-color: #FFB300; background: #FFF8E1; color: #FF6F00;
+}
+
+.wide-input-group { display: flex; gap: 10px; width: 100%; align-items: center; }
+
+.input-wrapper {
+    position: relative; flex: 1; display: flex; align-items: center;
+}
+
+.wide-input-group input {
+    width: 100%;
+    height: 52px; border: 2px solid #EEE; border-radius: 12px; padding: 0 16px; padding-right: 48px; /* Room for icon */
+    font-size: 18px; font-weight: 700; color: #333; outline: none; background: #FAFAFA;
+    font-family: 'OneMobilePop', cursive;
+}
+.wide-input-group input:focus { border-color: #FFB300; background: #FFF; }
+.wide-input-group input::placeholder { color: #DDD; }
+
+.calendar-icon {
+    position: absolute; right: 16px; 
+    color: #333; font-size: 24px; cursor: pointer;
+    transition: 0.2s;
+}
+.calendar-icon:hover { color: #FFB300; transform: scale(1.1); }
+
+.wide-input-group button {
+    width: 80px; height: 52px; background: #333; color: #FFF; border-radius: 12px; font-weight: 800; font-size: 16px; transition: 0.2s; border: none; cursor: pointer;
+    font-family: 'OneMobilePop', cursive;
+}
+.wide-input-group button:hover { background: #FFB300; transform: translateY(-2px); }
+
+/* Right Side */
+.calc-right { flex-shrink: 0; }
+
+.result-circle {
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: #FFF3E0;
+    border: 3px solid #4E342E; /* Thinner border */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     position: relative;
     overflow: hidden;
-    text-align: center;
-}
-.card-header { margin-bottom: 20px; }
-.card-photo { 
-    width: 80px; height: 80px; 
-    border-radius: 50%; object-fit: cover; 
-    margin-bottom: 10px; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    animation: bounce 2s infinite; 
-}
-.card-header h3 { font-size: 20px; font-weight: 800; color: #333; margin: 0; }
-
-.type-selector { display: flex; gap: 10px; margin-bottom: 20px; }
-.type-btn { 
-    flex: 1; padding: 10px; border-radius: 12px; border: 2px solid #EEE; background: #FAFAFA;
-    font-weight: 700; cursor: pointer; transition: 0.2s;
-}
-.type-btn.active { border-color: #FFB74D; background: #FFF3E0; color: #E65100; transform: translateY(-2px); }
-
-.display-area { margin-bottom: 20px; }
-.input-display { 
-    width: 100%; height: 50px; background: #F5F5F5; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: 700; color: #333; font-family: 'Jua';
+    padding: 0; /* Remove padding to make image full size */
 }
-.input-display.placeholder { color: #BBB; }
 
-.num-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.num-btn { 
-    height: 50px; border-radius: 12px; background: #FFF; border: 1px solid #EEE;
-    font-size: 18px; font-weight: 700; color: #555; cursor: pointer;
-    box-shadow: 0 4px 0 #EEE; transition: 0.1s;
+.default-view { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.circle-img { 
+    width: 100%; height: 100%; 
+    object-fit: cover; 
+    border-radius: 50%; 
 }
-.num-btn:active { transform: translateY(2px); box-shadow: none; }
-.action-btn { 
-    height: 50px; border-radius: 12px; border: none; font-weight: 700; color: #FFF; cursor: pointer;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+
+.result-view { 
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+    text-align: center; 
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    padding: 0; margin: 0;
 }
-.action-btn.del { background: #EF9A9A; font-size: 14px; }
-.action-btn.calc { background: #26A69A; grid-column: span 2; font-size: 18px; }
+.res-label { font-size: 16px; color: #8D6E63; margin: 0; font-weight: 700; line-height: 1.5; font-family: 'OneMobilePop', cursive; }
+.res-num { 
+    font-size: 70px; font-weight: 900; font-family: 'OneMobilePop', cursive; 
+    color: #FF6F00; line-height: 1.1; margin: 4px 0 16px 0;
+}
+.res-reset {
+    padding: 8px 16px; background: #8D6E63; color: #FFF; border-radius: 20px; font-size: 14px; font-weight: 700; transition: 0.2s; border: none; cursor: pointer;
+}
+.res-reset:hover { background: #5D4037; }
+
+@keyframes popIn { 
+    0% { transform: scale(0.5); opacity: 0; } 
+    100% { transform: scale(1); opacity: 1; } 
+}
+
+@media (max-width: 900px) {
+    .age-wide-card { width: 100%; height: auto; flex-direction: column-reverse; padding: 40px 20px; text-align: center; }
+    .calc-left { padding-right: 0; align-items: center; width: 100%; }
+    .calc-right { margin-bottom: 30px; }
+    .result-circle { width: 220px; height: 220px; }
+    .wide-type-selector { max-width: 400px; }
+    .wide-input-group { max-width: 400px; }
+}
 
 /* Result Overlay */
 .result-overlay {
@@ -693,7 +798,6 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
     padding: 10px 24px; background: #5C6BC0; color: #FFF; border: none; border-radius: 20px;
     font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(92, 107, 192, 0.4);
 }
-
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 @keyframes pop { 0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
 @media (max-width: 768px) { .age-card { width: 100%; } }
@@ -709,31 +813,32 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 .quiz-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; border: 4px solid #fff; background: var(--primary-honey); color: #fff; transform: rotateY(180deg); text-align: center; }
 .q-img { width: 45%; height: 100%; border-radius: 24px; object-fit: cover; margin-right: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .q-text-wrap { flex: 1; display: flex; flex-direction: column; align-items: flex-start; }
-.q-badge { background: var(--soft-butter); color: var(--text-brown-dark); padding: 8px 16px; border-radius: 20px; font-size: 16px; font-weight: 700; margin-bottom: 16px; display: inline-block; font-family: var(--font-title); }
-.q-question { font-size: 26px; line-height: 1.35; word-break: keep-all; font-family: var(--font-title); margin-bottom: 24px; }
+.q-badge { background: #4E342E; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 16px; font-weight: normal; margin-bottom: 16px; display: inline-block; font-family: 'OneMobilePop', cursive; }
+.q-question { font-size: 26px; line-height: 1.35; word-break: keep-all; font-family: 'OneMobilePop', cursive; margin-bottom: 24px; font-weight: 100; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .q-options { display: flex; gap: 20px; }
-.q-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--bg-cream); border: 2px solid var(--primary-honey); color: var(--primary-honey); font-size: 28px; font-weight: 900; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+.q-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--bg-cream); border: 2px solid var(--primary-honey); color: var(--primary-honey); font-size: 28px; font-weight: normal; display: flex; align-items: center; justify-content: center; transition: 0.3s; font-family: 'OneMobilePop', cursive; }
 .q-btn:hover { transform: scale(1.1); background: var(--primary-honey); color: #fff; }
-.a-result { font-size: 60px; font-weight: 900; margin-bottom: 16px; }
-.a-desc { font-size: 20px; line-height: 1.6; word-break: keep-all; font-weight: 700; }
-.a-sub { font-size: 14px; margin-top: 20px; opacity: 0.8; }
+.a-result { font-size: 60px; font-weight: normal; margin-bottom: 16px; font-family: 'OneMobilePop', cursive; }
+.a-desc { font-size: 20px; line-height: 1.6; word-break: keep-all; font-weight: normal; font-family: 'OneMobilePop', cursive; -webkit-font-smoothing: antialiased; }
+.a-sub { font-size: 14px; margin-top: 20px; opacity: 0.8; font-family: 'OneMobilePop', cursive; font-weight: normal; }
 .nav-arrow { 
     width: 56px; height: 56px; 
     flex-shrink: 0; /* Fix: Prevent squashing */
     border-radius: 50%; 
-    background: #2D2D2D; /* Premium Dark Charcoal */
+    background: #fff; /* White Background */
     border: none;
-    color: #fff; 
+    color: var(--primary-honey); /* Yellow Icon */
     font-size: 24px; 
     cursor: pointer; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
     display: flex; align-items: center; justify-content: center; 
 }
 .nav-arrow:hover { 
     transform: scale(1.1); 
-    background: #000;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.25); 
+    background: var(--primary-honey); /* Hover to Yellow */
+    color: #fff;
+    box-shadow: 0 8px 16px rgba(255, 179, 0, 0.3); /* Golden Shadow */
 }
 .reveal { opacity: 0; transform: translateY(60px); transition: 1s ease; }
 .reveal.active { opacity: 1; transform: translateY(0); }
@@ -870,7 +975,7 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
   display: flex;
   background: transparent;
   box-shadow: none;
-  max-width: 850px; /* Reduced width */
+  max-width: 1000px; /* Increased width */
   width: 100%;
   border: none;
   border-radius: 0;
@@ -922,9 +1027,9 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 }
 
 .f-title {
-  font-family: 'NanumSquareRound', sans-serif;
+  font-family: 'OneMobilePop', cursive;
   font-size: 28px; /* Reduced font size */
-  font-weight: 800;
+  font-weight: normal;
   color: #333;
   margin-bottom: 16px;
   line-height: 1.3;
