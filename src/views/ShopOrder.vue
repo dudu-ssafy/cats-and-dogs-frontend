@@ -18,8 +18,10 @@ const finalPrice = computed(() => store.totalProductPrice + shippingFee.value);
 // 3. 숫자 콤마 포맷팅 함수
 const formatPrice = (num) => num.toLocaleString();
 
+import { paymentApi } from '@/api/payment';
+
 // 4. 결제하기 처리 함수
-const handlePayment = () => {
+const handlePayment = async () => {
   if (store.cartItems.length === 0) {
     alert('결제할 상품이 장바구니에 없습니다.');
     return;
@@ -28,13 +30,22 @@ const handlePayment = () => {
   const confirmMsg = `${formatPrice(finalPrice.value)}원을 결제하시겠습니까?`;
   
   if(confirm(confirmMsg)) {
-    alert('결제가 완료되었습니다! 쿨거래 감사합니다 🐶');
-    
-    // 결제 성공 후 로직: 장바구니 비우기
-    store.cartItems = []; 
-    
-    // 메인 페이지로 이동
-    router.push('/');
+    try {
+        const response = await paymentApi.kakaoReady();
+        const { next_redirect_pc_url } = response.data;
+        
+        if (next_redirect_pc_url) {
+            // 카카오페이 결제 화면으로 이동
+            window.location.href = next_redirect_pc_url;
+        } else {
+            alert('결제 시작에 실패했습니다.');
+        }
+
+        // 결제 성공 후 로직은 리다이렉트 페이지에서 처리됨
+    } catch (e) {
+        console.error(e);
+        alert('결제 요청 중 오류가 발생했습니다.');
+    }
   }
 };
 // 5. 마운트 시 데이터 갱신

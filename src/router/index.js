@@ -13,6 +13,7 @@ import SignupView from '@/views/SignupView.vue'
 import MyProfileView from '@/views/MyProfileView.vue' 
 import ShopOrder from '@/views/ShopOrder.vue'
 import LicensePage  from '@/views/LicensePage.vue'
+import PaymentResult from '@/views/PaymentResult.vue'
 
 
 const router = createRouter({
@@ -105,11 +106,12 @@ const router = createRouter({
       path: '/search',
       name: 'Search',
       component: () => import('@/views/Search.vue')
+    },
+    {
+      path: '/payment/result',
+      name: 'payment-result',
+      component: PaymentResult
     }
-
-
-
-
   ]
 })
 
