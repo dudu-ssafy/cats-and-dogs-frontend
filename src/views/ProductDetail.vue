@@ -78,7 +78,8 @@ const fetchProductDetail = async () => {
             name: data.title,
             price: data.base_price, 
             img: mainImage,
-            options: data.options // API에서 받은 옵션 목록 저장
+            options: data.options, // API에서 받은 옵션 목록 저장
+            detailImg: data.detail_image_url || null // 상세 이미지 매핑
         };
         
         // 옵션이 1개뿐이라면 자동 선택 기능 (편의성)
@@ -163,13 +164,23 @@ onMounted(() => {
         </div>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section" v-if="product">
         <h3 class="detail-title">상세 정보</h3>
         <br>
-        <p style="color:var(--text-body); margin-bottom:20px;">
-            등록된 상세 이미지가 아래에 노출됩니다.
-        </p>
-        <img src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80" class="detail-img-placeholder" style="border-radius: 16px;">
+        
+        <!-- 상세 이미지가 있으면 렌더링 -->
+        <div v-if="product.detailImg" class="detail-content">
+             <img :src="product.detailImg" alt="상세 설명 이미지" class="detail-img">
+        </div>
+
+        <!-- 없으면 안내 문구 (또는 숨김 처리 가능) -->
+        <div v-else class="empty-detail">
+            <p style="color:#999; margin-bottom:20px;">
+                상세 이미지가 준비 중입니다.
+            </p>
+            <!-- Placeholder for dev purpose, remove if not needed -->
+            <!-- <img src="https://via.placeholder.com/800x1200?text=Detail+Image+Placeholder" class="detail-img-placeholder"> -->
+        </div>
     </section>
 
   </main>
@@ -238,4 +249,12 @@ onMounted(() => {
 .detail-section { text-align: center; padding: 60px 0; border-top: 1px solid #E5E7EB; }
 .detail-title { font-size: 24px; font-weight: 800; margin-bottom: 40px; display: inline-block; border-bottom: 3px solid #FFD54F; padding-bottom: 4px; }
 .detail-img-placeholder { max-width: 860px; width: 100%; margin: 0 auto; display: block; }
+
+.detail-img {
+    width: 100%; 
+    max-width: 860px; /* Limit max width for readability */
+    height: auto; 
+    display: block; 
+    margin: 0 auto;
+}
 </style>

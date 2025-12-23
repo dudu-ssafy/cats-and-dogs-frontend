@@ -102,7 +102,7 @@
       </div> <!-- Close first container -->
 
       <!-- Sticky Scroll Section (Full Width) -->
-      <section class="sticky-wrapper reveal">
+      <section class="sticky-wrapper">
         <!-- Left: Sticky Image (50%) -->
         <div class="sticky-left">
             <div class="sticky-visual">
@@ -116,53 +116,45 @@
         <!-- Right: Scroll Content (50%) -->
         <div class="scroll-right">
           
-          <!-- Age Calculator -->
+          <!-- Age Calculator (Fridge Theme) -->
+          <!-- Age Calculator (Realistic Retro Calculator Theme) -->
           <div class="age-calc-section">
-            <div class="water-card age-card" style="margin:0; width:100%; max-width:100%;">
-              <h2 class="section-title" style="margin-bottom:10px">🔢 멍냥이 나이 계산기</h2>
-              <p class="section-desc u-text-center u-mb-40">우리 아이, 사람 나이로는 몇 살일까요?</p>
+          <!-- Age Calculator (Simple Cake/Party Theme) -->
+          <div class="age-calc-section">
+            <div class="age-card">
+               <div class="card-header">
+                  <img :src="partyImg" class="card-photo" alt="Party" />
+                  <h3>우리 아이 나이 계산기</h3>
+               </div>
+               
+               <div class="type-selector">
+                  <button class="type-btn" :class="{ active: petType === 'dog' }" @click="pressSelect('dog')">🐶 강아지</button>
+                  <button class="type-btn" :class="{ active: petType === 'cat' }" @click="pressSelect('cat')">🐱 고양이</button>
+               </div>
 
-              <div class="calc-box">
-                <div class="calc-inputs">
-                  <div class="type-selector">
-                    <button 
-                      :class="{ active: petType === 'dog' }" 
-                      @click="petType = 'dog'"
-                    >🐶 강아지</button>
-                    <button 
-                      :class="{ active: petType === 'cat' }" 
-                      @click="petType = 'cat'"
-                    >🐱 고양이</button>
-                  </div>
-                  
-                  <div class="input-row">
-                    <label class="input-label">생일이 언제인가요?</label>
-                    <input 
-                      type="date" 
-                      v-model="birthDate" 
-                      class="date-input"
-                    >
-                  </div>
-                </div>
+               <div class="display-area">
+                  <div class="input-display" :class="{ placeholder: !calcInput }">{{ displayScreen }}</div>
+               </div>
 
-                <div class="calc-result" v-if="humanAge">
-                  <div class="result-circle age-circle">
-                    <span class="age-emoji">🎂</span>
-                    <span class="amount">{{ humanAge }}살</span>
-                    <span class="cups">사람 나이 환산</span>
+               <div class="num-pad">
+                  <button class="num-btn" v-for="n in [7,8,9,4,5,6,1,2,3]" :key="n" @click="pressNum(n)">{{ n }}</button>
+                  <button class="num-btn" @click="pressNum(0)">0</button>
+                  <button class="action-btn del" @click="pressBack">⬅️</button>
+                  <button class="action-btn calc" @click="calculateAge">확인</button>
+               </div>
+               
+               <!-- Result Overlay (Cake Theme) -->
+               <div class="result-overlay" v-if="calculatedAge !== null">
+                  <div class="result-box">
+                      <div class="r-icon">🎉</div>
+                      <div class="r-title">사람 나이로는?</div>
+                      <div class="r-age">{{ calculatedAge }}세</div>
+                      <button class="r-close" @click="pressClear">다시하기</button>
                   </div>
-                  <p class="result-tip">
-                    {{ petType === 'dog' ? '소형견 기준입니다. 대형견은 조금 더 높을 수 있어요!' : '고양이는 2살 이후로 노화가 천천히 진행돼요.' }}
-                  </p>
-                </div>
-                <div class="calc-result" v-else>
-                  <div class="result-circle age-placeholder">
-                    <span class="age-emoji" style="opacity:0.5; filter:grayscale(1)">🎂</span>
-                    <span class="cups">생일을 입력해주세요</span>
-                  </div>
-                </div>
-              </div>
+               </div>
+
             </div>
+          </div>
           </div>
 
           <!-- Quiz -->
@@ -253,13 +245,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router'; 
 import api from '@/api';
 import quizImg01 from '@/assets/images/joh-eun-sonyeon-chiwawa-gang-ajiui-chosanghwa.jpg';
 import quizImg02 from '@/assets/images/nuwoseo-hapumhaneun-hoesaeg-julmunui-goyang-iui-selo-syas.jpg';
 import quizImg03 from '@/assets/images/gwiyeoun-bodeo-kol-li-gang-ajiui-seutyudio-syas.jpg';
-import stickyImg from '@/assets/images/dark_christmas_cat.png'; // New Dark Sticky Image
+import stickyImg from '@/assets/images/dark_christmas_cat.png'; 
+import partyImg from '@/assets/images/party_cat.jpg';
 const router = useRouter();
 const searchQuery = ref('');
 
@@ -322,39 +315,105 @@ const fetchBoardData = async () => {
   }
 };
 
-// 2-1. 나이 계산기
+// 2-1. Real Calculator Logic
 const petType = ref('dog');
-const birthDate = ref('');
+const calcInput = ref(''); // Stores "20231225" string
+const calculatedAge = ref(null); // Stores final age result
 
-const humanAge = computed(() => {
-  if (!birthDate.value) return null;
+// Display formatting (YYYY-MM-DD)
+const displayScreen = computed(() => {
+  if (calculatedAge.value !== null) {
+      return `${calculatedAge.value}세`;
+  }
   
-  const birth = new Date(birthDate.value);
+  if (!calcInput.value) return '생년월일 8자리';
+  
+  // Format as YYYY-MM-DD visually
+  let raw = calcInput.value;
+  let formatted = '';
+  if (raw.length > 0) formatted += raw.substring(0, 4);
+  if (raw.length > 4) formatted += '-' + raw.substring(4, 6);
+  if (raw.length > 6) formatted += '-' + raw.substring(6, 8);
+  return formatted;
+});
+
+// Keypad Handlers
+const pressNum = (num) => {
+  if (calculatedAge.value !== null) {
+      // Reset if typing after calculation
+      calcInput.value = '';
+      calculatedAge.value = null;
+  }
+  if (calcInput.value.length < 8) {
+    calcInput.value += num.toString();
+  }
+};
+
+const pressBack = () => {
+    if (calculatedAge.value !== null) {
+      calcInput.value = '';
+      calculatedAge.value = null;
+      return;
+    }
+    calcInput.value = calcInput.value.slice(0, -1);
+};
+
+const pressClear = () => {
+  calcInput.value = '';
+  calculatedAge.value = null;
+};
+
+const pressSelect = (type) => {
+    petType.value = type;
+    // Recalculate if possible
+    if(calculatedAge.value !== null) calculateAge();
+}
+
+const calculateAge = () => {
+  if (calcInput.value.length !== 8) return;
+
+  const y = parseInt(calcInput.value.substring(0, 4));
+  const m = parseInt(calcInput.value.substring(4, 6)) - 1; // month is 0-indexed
+  const d = parseInt(calcInput.value.substring(6, 8));
+  
+  const birth = new Date(y, m, d);
   const now = new Date();
+  
+  // Basic validation
+  if (isNaN(birth.getTime())) {
+      calcInput.value = '';
+      alert('올바른 날짜가 아닙니다.');
+      return;
+  }
+
   let years = now.getFullYear() - birth.getFullYear();
-  const m = now.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+  const diffMonth = now.getMonth() - birth.getMonth();
+  if (diffMonth < 0 || (diffMonth === 0 && now.getDate() < birth.getDate())) {
     years--;
   }
-  
-  // 0살(1년 미만) 처리: 개월 수로 약식 계산 (단순화: 1개월 1살 등)
-  // 여기서는 단순히 연도 기준 계산
-  if (years < 0) return 0;
 
-  // 공식 적용
-  // 1년: 15살
-  // 2년: 24살
-  // 3년+: 24 + (년-2)*5 (강아지) / *4 (고양이)
-  if (years === 0) return 1; // 1살 미만은 1살로 침 (파격적?) 아니면 개월수? 일단 1살로.
-  
-  if (years === 1) return 15;
-  if (years === 2) return 24;
-  
-  if (petType.value === 'dog') {
-    return 24 + (years - 2) * 5;
-  } else {
-    return 24 + (years - 2) * 4;
+  // Age Logic
+  if (years < 0) {
+      calculatedAge.value = 0;
+      return;
   }
+  
+  // Formula
+  let result = 0;
+  if (years === 0) result = 1; // Under 1 year
+  else if (years === 1) result = 15;
+  else if (years === 2) result = 24;
+  else {
+      if (petType.value === 'dog') result = 24 + (years - 2) * 5;
+      else result = 24 + (years - 2) * 4;
+  }
+  calculatedAge.value = result;
+};
+
+// Auto calculate when 8 digits entered? (Optional, let's stick to Enter button)
+watch(calcInput, (newVal) => {
+    if (calculatedAge.value !== null) return; // Don't interfere if showing result
+    // Could auto-calc here if desired
 });
 
 // 2. 퀴즈 로직
@@ -564,60 +623,80 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 
 /* Banner */
 /* Age Calculator */
+/* Age Calculator - Realistic Retro Calculator Theme */
 .age-calc-section { margin-bottom: 160px; display: flex; justify-content: center; }
-.age-card { 
-    background: #fff; width: 100%; max-width: 800px; padding: 50px; 
-    border-radius: 40px; box-shadow: var(--shadow-soft); border: 2px solid #fff;
+
+/* Age Calculator - Simple Party Theme */
+.age-calc-section { margin-bottom: 160px; display: flex; justify-content: center; }
+
+.age-card {
+    background: #FFF;
+    width: 320px; padding: 30px;
+    border-radius: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
     text-align: center;
 }
-.age-card .section-desc { font-size: 18px; color: #8D6E63; margin-bottom: 40px; }
-.calc-box { display: flex; gap: 40px; align-items: center; justify-content: center; }
-.calc-inputs { flex: 1; display: flex; flex-direction: column; gap: 30px; }
-.type-selector { display: flex; background: #FFF8E1; border-radius: 50px; padding: 5px; }
-.type-selector button { 
-    flex: 1; padding: 12px; border-radius: 40px; font-weight: 800; color: #A1887F; background: transparent; transition: 0.3s;
+.card-header { margin-bottom: 20px; }
+.card-photo { 
+    width: 80px; height: 80px; 
+    border-radius: 50%; object-fit: cover; 
+    margin-bottom: 10px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    animation: bounce 2s infinite; 
 }
-.type-selector button.active { background: #FFB300; color: #fff; box-shadow: 0 4px 10px rgba(255, 179, 0, 0.4); transform: scale(1.05); }
+.card-header h3 { font-size: 20px; font-weight: 800; color: #333; margin: 0; }
 
-.input-row { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-.input-label { font-size: 16px; font-weight: 700; color: #795548; padding-left: 10px; }
-.date-input { 
-    width: 100%; padding: 15px 20px; font-size: 18px; border-radius: 20px; 
-    border: 2px solid #EEE; outline: none; transition: 0.3s; font-family: var(--font-body); 
-    color: #5D4037; text-align: center; cursor: pointer;
+.type-selector { display: flex; gap: 10px; margin-bottom: 20px; }
+.type-btn { 
+    flex: 1; padding: 10px; border-radius: 12px; border: 2px solid #EEE; background: #FAFAFA;
+    font-weight: 700; cursor: pointer; transition: 0.2s;
 }
-.date-input:focus { border-color: #FF7043; background: #FFF3E0; }
+.type-btn.active { border-color: #FFB74D; background: #FFF3E0; color: #E65100; transform: translateY(-2px); }
 
-.calc-result { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: fadeInResult 0.5s ease; }
-@keyframes fadeInResult { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.display-area { margin-bottom: 20px; }
+.input-display { 
+    width: 100%; height: 50px; background: #F5F5F5; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700; color: #333; font-family: 'Jua';
+}
+.input-display.placeholder { color: #BBB; }
 
-.result-circle { 
-    width: 200px; height: 200px; border-radius: 50%; color: #fff; 
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+.num-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.num-btn { 
+    height: 50px; border-radius: 12px; background: #FFF; border: 1px solid #EEE;
+    font-size: 18px; font-weight: 700; color: #555; cursor: pointer;
+    box-shadow: 0 4px 0 #EEE; transition: 0.1s;
 }
-.age-circle {
-    background: linear-gradient(135deg, #FF7043, #FF5722);
-    box-shadow: 0 15px 40px rgba(255, 87, 34, 0.4);
-    animation: pulseAge 3s infinite;
+.num-btn:active { transform: translateY(2px); box-shadow: none; }
+.action-btn { 
+    height: 50px; border-radius: 12px; border: none; font-weight: 700; color: #FFF; cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.1);
 }
-.age-placeholder {
-    background: #EFEBE9; color: #BCAAA4; border: 4px dashed #D7CCC8; box-shadow: none;
-}
-.age-emoji { font-size: 50px; margin-bottom: 5px; line-height: 1; }
-.amount { font-size: 48px; font-weight: 900; line-height: 1; font-family: var(--font-title); margin: 5px 0; }
-.cups { font-size: 15px; opacity: 0.9; font-weight: 700; }
-.result-tip { margin-top: 25px; font-size: 15px; color: #8D6E63; background: #FFF3E0; padding: 10px 20px; border-radius: 20px; line-height: 1.4; word-break: keep-all; }
+.action-btn.del { background: #EF9A9A; font-size: 14px; }
+.action-btn.calc { background: #26A69A; grid-column: span 2; font-size: 18px; }
 
-@keyframes pulseAge {
-    0% { transform: scale(1); box-shadow: 0 15px 40px rgba(255, 87, 34, 0.4); }
-    50% { transform: scale(1.05); box-shadow: 0 20px 50px rgba(255, 87, 34, 0.6); }
-    100% { transform: scale(1); box-shadow: 0 15px 40px rgba(255, 87, 34, 0.4); }
+/* Result Overlay */
+.result-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn 0.3s;
+}
+.result-box { text-align: center; }
+.r-icon { font-size: 50px; margin-bottom: 10px; animation: pop 0.5s; }
+.r-title { font-size: 16px; color: #555; margin-bottom: 5px; }
+.r-age { font-size: 60px; color: #FF7043; font-weight: 900; font-family: 'Jua'; line-height: 1.2; margin-bottom: 20px; }
+.r-close { 
+    padding: 10px 24px; background: #5C6BC0; color: #FFF; border: none; border-radius: 20px;
+    font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(92, 107, 192, 0.4);
 }
 
-@media (max-width: 768px) {
-  .calc-box { flex-direction: column; }
-}
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes pop { 0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
+@media (max-width: 768px) { .age-card { width: 100%; } }
 
 /* Quiz */
 .quiz-container-single { display: flex; align-items: center; justify-content: center; gap: 40px; margin-bottom: 120px; }
@@ -688,7 +767,7 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
   width: 100vw;
   margin-left: calc(50% - 50vw); /* Force full width within parent */
   position: relative;
-  background: #FFFFFF; /* Pure White */
+  background: #F7F7F5; /* Warm Paper Grey - Distinct from Cream */
   margin-bottom: 200px;
 }
 
@@ -758,7 +837,7 @@ button { font-family: var(--font-body); border: none; cursor: pointer; }
 .scroll-right {
   width: 60%; /* Increased from 50% */
   position: relative;
-  background: #FFFFFF; /* Pure White */
+  background: #F7F7F5; /* Matches wrapper */
   padding: 40px 60px 150px 60px; /* Reduced top padding from 150px to 40px */
   display: flex;
   flex-direction: column;
