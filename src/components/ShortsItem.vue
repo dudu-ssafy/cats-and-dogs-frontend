@@ -9,10 +9,26 @@ const props = defineProps({
     isCommentOpen: {
         type: Boolean,
         default: false
+    },
+    isActive: { // 🔥 재생 상태 제어용 prop 추가
+        type: Boolean,
+        default: false
     }
 });
 
 const emit = defineEmits(['toggle-like', 'toggle-follow', 'toggle-comments']);
+const videoRef = ref(null);
+
+// isActive 변경 감지하여 재생/일시정지
+import { watch } from 'vue';
+watch(() => props.isActive, (active) => {
+    if (active) {
+        videoRef.value?.play();
+    } else {
+        videoRef.value?.pause();
+        if (videoRef.value) videoRef.value.currentTime = 0; // 선택사항: 정지 시 처음으로
+    }
+});
 
 const togglePlay = (event) => {
     const videoEl = event.target;
@@ -22,16 +38,21 @@ const togglePlay = (event) => {
         videoEl.pause();
     }
 };
+
+const onToggleLike = () => {
+    console.log('ShortsItem: toggle-like clicked', props.video.id);
+    emit('toggle-like', props.video);
+};
 </script>
 
 <template>
     <div class="video-item">
         <video 
+            ref="videoRef"
             class="full-video"
             :src="video.videoUrl"
             loop
             muted
-            autoplay
             playsinline
             @click="togglePlay"
         ></video>
@@ -59,7 +80,7 @@ const togglePlay = (event) => {
         </div>
 
         <div class="side-actions">
-            <button class="act-btn" :class="{ active: video.isLiked }" @click="emit('toggle-like', video)">
+            <button class="act-btn" :class="{ active: video.isLiked }" @click.stop="onToggleLike">
                 <span class="material-icons-round icon">favorite</span>
                 <span class="cnt">{{ video.likes }}</span>
             </button>
@@ -82,6 +103,7 @@ const togglePlay = (event) => {
 </template>
 
 <style scoped>
+.video-item { position: relative; width: 100%; height: 100%; }
 .full-video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .video-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 40%; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); pointer-events: none; }
 

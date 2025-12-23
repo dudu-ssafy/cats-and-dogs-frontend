@@ -1,11 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import api from '@/api';
+import { ref, onMounted, nextTick } from 'vue';
+import { shortsApi } from '@/api/shorts';
 import ShortsItem from '@/components/ShortsItem.vue';
+import ShortsComment from '@/components/ShortsComment.vue';
 
 const videos = ref([]);
-
 const showCommentDrawer = ref(false);
+const selectedVideo = ref(null);
+const activeVideoId = ref(null); // 🔥 현재 재생 중인 비디오 ID
 
 onMounted(() => {
     fetchShorts();
@@ -13,7 +15,7 @@ onMounted(() => {
 
 const fetchShorts = async () => {
     try {
-        const response = await api.get('/shorts/');
+        const response = await shortsApi.getShorts();
         videos.value = response.data.map(item => ({
             id: item.id,
             username: item.author.nickname || item.author.username,
@@ -24,40 +26,82 @@ const fetchShorts = async () => {
             likes: item.likes_count,
             comments: item.comments_count,
             isLiked: item.is_liked,
-            isFollowed: false // TODO: 팔로우 상태 연동 시 업데이트
+            isFollowed: false 
         }));
+        
+        // 데이터 로드 후 옵저버 연결을 위해 nextTick 대기
+        nextTick(() => {
+            setupObserver();
+        });
+
     } catch (error) {
         console.error('Failed to fetch shorts:', error);
     }
 };
 
-const toggleComments = () => {
-    showCommentDrawer.value = !showCommentDrawer.value;
+// 🔥 IntersectionObserver 설정 (영상 자동 재생/정지 제어)
+const setupObserver = () => {
+    const options = {
+        root: document.querySelector('.video-scroll-container'),
+        threshold: 0.6 // 60% 이상 보일 때 활성화
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                // data-id 속성에서 비디오 ID 추출
+                const id = Number(entry.target.dataset.id);
+                activeVideoId.value = id;
+                
+                // 댓글창 상태 동기화 (선택 비디오 업데이트)
+                const video = videos.value.find(v => v.id === id);
+                if (video) selectedVideo.value = video;
+            }
+        });
+    }, options);
+
+    // 모든 비디오 아이템 관찰 시작
+    document.querySelectorAll('.video-item-wrapper').forEach(el => observer.observe(el));
 };
 
-const toggleLike = (video) => {
-    api.post(`/shorts/${video.id}/like/`)
-    .then(response => {
+const toggleComments = (video) => {
+    // 특정 비디오에서 열린 경우 선택 비디오 업데이트
+    if (video) {
+        selectedVideo.value = video; 
+        showCommentDrawer.value = true;
+    } else {
+        // 단순히 토글인 경우 (닫기 등)
+        showCommentDrawer.value = !showCommentDrawer.value;
+    }
+};
+
+const toggleLike = async (video) => {
+    try {
+        const response = await shortsApi.toggleLike(video.id);
         video.isLiked = response.data.is_liked;
         video.likes = response.data.likes;
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Failed to toggle like:', error);
-    });
+        if (error.response?.status === 401) {
+            alert('로그인이 필요합니다.');
+        }
+    }
 };
 
-// 🔥 팔로우 토글 함수
 const toggleFollow = (video) => {
+    // TODO: 팔로우 API 연동
     video.isFollowed = !video.isFollowed;
 };
 
-const togglePlay = (event) => {
-    const videoEl = event.target;
-    if (videoEl.paused) {
-        videoEl.play();
-    } else {
-        videoEl.pause();
+// 자식 컴포넌트(ShortsComment)로부터 댓글 수 업데이트
+const updateCommentCount = (count) => {
+    if (selectedVideo.value) {
+        selectedVideo.value.comments = count;
     }
+};
+
+const closeDrawer = () => {
+    showCommentDrawer.value = false;
 };
 </script>
 
@@ -66,95 +110,33 @@ const togglePlay = (event) => {
     <div class="center-wrapper">
         <div class="mobile-frame">
             <div class="video-scroll-container">
-                <ShortsItem 
+                <!-- 감지용 wrapper 추가 -->
+                <div 
                     v-for="video in videos" 
-                    :key="video.id" 
-                    :video="video"
-                    class="video-item"
-                    :is-comment-open="showCommentDrawer"
-                    @toggle-like="toggleLike"
-                    @toggle-follow="toggleFollow"
-                    @toggle-comments="toggleComments"
-                />
+                    :key="video.id"
+                    class="video-item-wrapper"
+                    :data-id="video.id" 
+                    style="height: 100%; scroll-snap-align: start;"
                 >
-                    <video 
-                        class="full-video"
-                        :src="video.videoUrl"
-                        loop
-                        muted
-                        autoplay
-                        playsinline
-                        @click="togglePlay"
-                    ></video>
-
-                    <div class="video-overlay"></div>
-
-                    <div class="info-area">
-                        <div class="profile-row">
-                            <img :src="video.userImg" class="thumb">
-                            <span class="name">{{ video.username }}</span>
-                            
-                           
-                        </div>
-                        <div class="desc-text" v-html="video.desc"></div>
-                        <div class="music-row">
-                            <span class="material-icons-round note-icon">music_note</span>
-                            <span class="music-text">{{ video.music }}</span>
-                        </div>
-                    </div>
-
-                    <div class="side-actions">
-                        <button class="act-btn" :class="{ active: video.isLiked }" @click="toggleLike(video)">
-                            <span class="material-icons-round icon">favorite</span>
-                            <span class="cnt">{{ video.likes }}</span>
-                        </button>
-                        
-                        <button class="act-btn" @click="toggleComments" :class="{ active: showCommentDrawer }">
-                            <span class="material-icons-round icon">mode_comment</span>
-                            <span class="cnt">{{ video.comments }}</span>
-                        </button>
-                        
-                        <button class="act-btn">
-                            <span class="material-icons-round icon">share</span>
-                            <span class="cnt">공유</span>
-                        </button>
-
-                        <div class="disk-ani">
-                            <img :src="video.userImg">
-                        </div>
-                    </div>
+                    <ShortsItem 
+                        :video="video"
+                        :is-active="activeVideoId === video.id"
+                        :is-comment-open="showCommentDrawer && selectedVideo?.id === video.id"
+                        @toggle-like="toggleLike"
+                        @toggle-follow="toggleFollow"
+                        @toggle-comments="() => toggleComments(video)"
+                    />
                 </div>
             </div>
         </div>
 
-        <div class="side-drawer" :class="{ open: showCommentDrawer }">
-            <div class="drawer-inner">
-                <div class="drawer-head">
-                    <span>댓글 248</span>
-                    <span class="material-icons-round close-btn" @click="toggleComments">close</span>
-                </div>
-                
-                <div class="drawer-body">
-                    <div class="cmt-row" v-for="i in 12" :key="i">
-                        <div class="cmt-pf"></div>
-                        <div class="cmt-data">
-                            <div class="cmt-usr">유저{{i}} <span class="time">1분전</span></div>
-                            <div class="cmt-msg">완전 힐링되네요! 😍 영상 더 올려주세요.</div>
-                        </div>
-                        <div class="cmt-heart">
-                            <span class="material-icons-round">favorite_border</span>
-                            <span style="font-size:10px">2</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="drawer-input">
-                    <input type="text" placeholder="댓글 입력..." class="inp">
-                    <button class="send">게시</button>
-                </div>
-            </div>
-        </div>
-
+        <ShortsComment 
+            :is-open="showCommentDrawer"
+            :video-id="selectedVideo?.id"
+            :total-comments="selectedVideo?.comments || 0"
+            @close="closeDrawer"
+            @update:count="updateCommentCount"
+        />
     </div>
   </div>
 </template>
@@ -168,49 +150,4 @@ const togglePlay = (event) => {
 .mobile-frame { width: 400px; height: 100%; background: black; border-radius: 24px; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5); z-index: 10; flex-shrink: 0; }
 .video-scroll-container { width: 100%; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; }
 .video-scroll-container::-webkit-scrollbar { display: none; }
-.video-item { width: 100%; height: 100%; position: relative; scroll-snap-align: start; background: #000; }
-.full-video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.video-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 40%; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); pointer-events: none; }
-
-/* 정보 영역 */
-.info-area { position: absolute; bottom: 20px; left: 16px; width: 75%; color: white; z-index: 10; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-.profile-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.thumb { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #fff; }
-.name { font-weight: 700; font-size: 15px; }
-
-
-
-
-
-.desc-text { font-size: 14px; line-height: 1.4; margin-bottom: 8px; }
-.music-row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-
-/* 우측 버튼 */
-.side-actions { position: absolute; bottom: 30px; right: 10px; display: flex; flex-direction: column; align-items: center; gap: 20px; z-index: 10; }
-.act-btn { background: none; border: none; color: white; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; }
-.act-btn:hover { transform: scale(1.1); }
-.act-btn.active .icon { color: #FF5252; }
-.act-btn .icon { font-size: 30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-.act-btn .cnt { font-size: 12px; font-weight: 600; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
-.disk-ani { width: 44px; height: 44px; background: #222; border-radius: 50%; border: 8px solid #111; margin-top: 20px; animation: spin 4s linear infinite; }
-.disk-ani img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-@keyframes spin { 100% { transform: rotate(360deg); } }
-
-/* 사이드 댓글창 */
-.side-drawer { width: 0; height: 100%; background: white; border-radius: 0 24px 24px 0; overflow: hidden; transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.3); }
-.side-drawer.open { width: 360px; border-left: 1px solid #eee; }
-.drawer-inner { width: 360px; height: 100%; display: flex; flex-direction: column; }
-.drawer-head { height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #eee; font-size: 15px; font-weight: 800; color: #333; }
-.close-btn { cursor: pointer; color: #999; }
-.drawer-body { flex: 1; overflow-y: auto; padding: 0 16px; }
-.cmt-row { display: flex; gap: 10px; padding: 16px 0; border-bottom: 1px solid #f9f9f9; }
-.cmt-pf { width: 32px; height: 32px; background: #ddd; border-radius: 50%; flex-shrink: 0; }
-.cmt-data { flex: 1; }
-.cmt-usr { font-size: 12px; font-weight: 700; color: #555; margin-bottom: 2px; }
-.cmt-usr .time { font-weight: 400; color: #aaa; margin-left: 4px; font-size: 11px; }
-.cmt-msg { font-size: 13px; color: #333; line-height: 1.3; }
-.cmt-heart { color: #ccc; font-size: 14px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-.drawer-input { height: 70px; border-top: 1px solid #eee; display: flex; align-items: center; padding: 0 16px; gap: 10px; background: #fff; }
-.inp { flex: 1; background: #F3F4F6; border: none; height: 40px; border-radius: 20px; padding: 0 16px; font-size: 14px; outline: none; }
-.send { background: none; border: none; color: #FFD54F; font-weight: 700; font-size: 14px; cursor: pointer; }
 </style>
