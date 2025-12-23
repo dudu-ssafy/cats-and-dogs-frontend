@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-// import api from '@/api'; 
+import api from '@/api'; 
 
 const route = useRoute();
 const router = useRouter();
@@ -12,26 +12,43 @@ const isLoading = ref(false);
 const searchResults = ref({ shorts: [], community: [], store: [] });
 
 const fetchResults = async (q) => {
-    if (!q) return;
+    if (!q) {
+        searchResults.value = { shorts: [], community: [], store: [] };
+        return;
+    }
+    
     isLoading.value = true;
-    setTimeout(() => {
+    try {
+        const response = await api.get('/search/', {
+            params: { query: q }
+        });
+        
+        const data = response.data.results;
+        
         searchResults.value = {
-            shorts: [
-                { id: 1, thumb: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?q=80&w=400', title: `${q}와 함께하는 일상`, views: '1.2k' },
-                { id: 2, thumb: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=400', title: `${q} 먹방 쇼츠`, views: '800' },
-                { id: 3, thumb: 'https://images.unsplash.com/photo-1591768793355-74d04bb6608f?q=80&w=400', title: `${q} 관리 꿀팁`, views: '2.5k' },
-                { id: 4, thumb: 'https://images.unsplash.com/photo-1544568100-847a948585b9?q=80&w=400', title: `${q} 산책 브이로그`, views: '1.5k' },
-            ],
-            community: [
-                { id: 101, category: '자유', title: `${q} 키우시는 분들 계신가요?`, author: '초보집사', date: '12:30', comments: 5 },
-                { id: 102, category: '질문', title: `${q} 사료 추천 부탁드려요!`, author: '댕댕이맘', date: '10:15', comments: 12 },
-            ],
-            store: [
-                { id: 201, img: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=400', name: `${q} 전용 샴푸`, price: '18,500원' },
-            ]
+            shorts: (data.shorts || []).map(item => ({
+                ...item,
+                thumb: item.thumbnail_url || 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=400',
+                views: item.views || 0 // Backend currently returns 0 or field might be missing, formatted in UI?
+            })),
+            community: (data.boards || []).map(item => ({
+                ...item,
+                comments: item.comments || 0,
+                // date formatting handled in backend as 'YYYY-MM-DD'
+            })),
+            store: (data.products || []).map(item => ({
+                ...item,
+                // Backend sends 'img' and 'price' formatted
+            }))
         };
+
+    } catch (error) {
+        console.error("Search failed:", error);
+        // Error handling or empty results
+        searchResults.value = { shorts: [], community: [], store: [] };
+    } finally {
         isLoading.value = false;
-    }, 500);
+    }
 };
 
 onMounted(() => fetchResults(searchQuery.value));
@@ -142,7 +159,7 @@ const goToDetail = (type, id) => {
 .search-page {
   --primary-honey: #FFB300;
   --text-brown: #4E342E;
-  --line-light: #EEE; /* 선 색상을 더 연하게 변경 */
+  --line-light: #EEE; /* 선 색상을 더 연하게 변경 */ 
   background-color: #FDFCF8;
   min-height: 100vh;
   padding-bottom: 80px;
