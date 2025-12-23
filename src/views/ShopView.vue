@@ -69,7 +69,7 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
           <div class="banner__content">
             <p class="banner__subtitle">우리아이 따뜻한 겨울나기</p>
             <h1 class="banner__title">방한용품 보러가기</h1>
-            <div class="btn--elegant-red" @click="showEventPage">구성하러 가기</div>
+            <div class="btn--elegant-red" @click="showEventPage">구경하러 가기</div>
           </div>
         </section>
 
@@ -113,7 +113,7 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
         <section>
           <div class="section-head">
             <h2 class="section-title">
-              {{ selectedCategory === '전체' ? '🔥 이번 주 핫딜' : `📍 ${selectedCategory} 추천 상품` }}
+              {{ selectedCategory === '전체' ? '전체 상품' : `📍 ${selectedCategory} 추천 상품` }}
             </h2>
           </div>
 
@@ -236,12 +236,15 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
 }
 
 .banner__title {
-  font-size: 58px;
-  font-weight: 900;
+  font-family: 'Jua', sans-serif; /* 귀여운 글씨체 적용 */
+  font-size: 64px; /* 크기 약간 키움 */
+  font-weight: 400; /* Jua는 bold가 따로 없으므로 400 */
   color: #ffffff;
   margin-bottom: 35px;
   line-height: 1.1;
-  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.2), 
+               0 0 20px rgba(0,0,0,0.5); /* 그림자 강화 */
+  letter-spacing: 1px;
 }
 
 .btn--elegant-red {
@@ -290,10 +293,177 @@ const top5Products = computed(() => [...products.value].slice(0, 5));
 .prod-thumb-box { height: 240px; background: #F0F0F0; display: flex; align-items: center; justify-content: center; }
 .prod-info { padding: 20px; }
 .price-final { font-size: 18px; font-weight: 800; }
+/* ============================================================
+   3. EVENT PAGE (이벤트 페이지): 프리미엄 크리스마스 테마
+   ============================================================ */
+.theme-christmas {
+  background: #fff;
+  color: #333;
+  border: none;
+  padding: 0;
+  border-radius: 20px;
+  margin: 40px 0;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.event-header {
+  background-color: #0F3D3E; /* Premium Deep Green */
+  background-image: radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0%, transparent 20%),
+                    radial-gradient(circle at 90% 80%, rgba(255,255,255,0.05) 0%, transparent 20%);
+  padding: 80px 20px;
+  text-align: center;
+  position: relative;
+}
+
+.event-header::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top: 16px solid #0F3D3E;
+  z-index: 10;
+}
+
+.event-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: #F8F5E4; /* Cream Gold */
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.event-subtitle {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  margin-bottom: 40px;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.btn-back {
+  background: transparent;
+  color: #F8F5E4;
+  border: 1px solid rgba(248, 245, 228, 0.4);
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Noto Sans KR', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.btn-back:hover {
+  background: #F8F5E4;
+  color: #0F3D3E;
+  border-color: #F8F5E4;
+  transform: translateY(-2px);
+}
+
+.grid-top5 {
+  padding: 80px 60px;
+  background: #FFFFFF;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px;
+}
+
+.card-event {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: transform 0.4s ease;
+  text-align: center;
+}
+
+.card-event:hover {
+  transform: translateY(-10px) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.card-event .prod-thumb-box {
+  border-radius: 8px; /* Slightly sleek radius */
+  overflow: hidden;
+  height: 240px;
+  background: #F8F9FA;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08); /* Luxurious soft shadow */
+  margin-bottom: 24px;
+  position: relative;
+  transition: box-shadow 0.3s ease;
+}
+
+.card-event:hover .prod-thumb-box {
+  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+.card-event .event-rank {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  width: 32px;
+  height: 42px;
+  background: #BF212E; /* Deep Red */
+  color: #fff;
+  border-radius: 0 0 4px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 16px;
+  z-index: 10;
+  box-shadow: 0 4px 8px rgba(191, 33, 46, 0.3);
+}
+
+.card-event .prod-info {
+  padding: 0 8px;
+}
+
+.card-event .prod-name {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #111;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-event .price-final {
+  color: #0F3D3E;
+  font-size: 18px;
+  font-weight: 800;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* Helper for clean layout */
 .u-text-center { text-align: center; }
 
-.theme-christmas { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); color: #fff; border: 8px double #d4af37; padding: 60px 0; border-radius: 40px; margin: 40px 0; }
-.event-rank { position: absolute; top: -10px; left: -10px; width: 40px; height: 40px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; z-index: 20; }
-.btn-back { background: transparent; color: #fff; border: 1px solid #fff; padding: 10px 24px; border-radius: 100px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
-.btn-back:hover { background: #fff; color: #064e3b; }
+/* Responsive adjustments */
+@media (max-width: 1100px) {
+  .grid-top5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .grid-top5 {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 40px 20px;
+  }
+  .event-title { font-size: 32px; }
+}
 </style>

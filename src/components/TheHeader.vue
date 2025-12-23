@@ -158,7 +158,7 @@ const goToProfileOrLogin = () => {
    ============================================================ */
 .c-site-header {
   --h-height: clamp(60px, 8vh, 80px); 
-  --h-bg: rgba(255, 255, 255, 0.95);
+  --h-bg: rgba(255, 255, 255, 0.95); /* 깔끔한 순백색으로 복귀 */
   --h-primary: #FFD54F;
   --h-accent: #FF8F00;
   
@@ -166,7 +166,8 @@ const goToProfileOrLogin = () => {
   background-color: var(--h-bg);
   backdrop-filter: blur(10px);
   position: sticky; top: 0; z-index: 1000;
-  box-shadow: 0 1px 10px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* 그림자는 아주 연하게 유지 */
+  border-bottom: 1px solid #F0F0F0; /* 경계선 유지 */
   transition: transform 0.3s ease;
 
   /* ✅ UI 기본 폰트 (나눔스퀘어라운드) */
