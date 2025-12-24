@@ -4,6 +4,9 @@ import { useUserStore } from '@/stores/user';
 import { useRouter } from 'vue-router'
 import api from '@/api';
 
+// [수정] 기본 프로필 이미지를 이상한 남자 사진에서 귀여운 강아지 사진으로 교체했습니다.
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1591160690555-5debfba289f0?q=80&w=400&auto=format&fit=facearea&ixlib=rb-1.2.1';
+
 const router = useRouter();
 const userStore = useUserStore();
 
@@ -67,7 +70,7 @@ const form = ref({
     address: '',
     description: '',
     weight: '',
-    petImgUrl: userStore.user.profileImg,
+    petImgUrl: userStore.user?.profileImg,
 });
 
 const userForm = ref({
@@ -232,8 +235,8 @@ const goRegistration = () => router.push('/my-page/license');
             </div>
 
             <div class="card profile-card">
-                <div class="img-wrapper">
-                    <img :src="userStore.user.profileImg" alt="프로필">
+                <div class="c-avatar c-avatar--profile c-avatar--circle">
+                    <img :src="userStore.user.profileImg || DEFAULT_IMAGE" class="c-avatar__img" alt="프로필">
                     <input type="file" ref="fileInputRef" style="display: none" accept="image/*" @change="handleFileChange">
                     <button class="c-camera-btn" @click="triggerFileUpload">
                         <span class="material-icons-round">photo_camera</span>
@@ -368,11 +371,17 @@ const goRegistration = () => router.push('/my-page/license');
 .back-text-btn { background: none; border: none; font-size: 16px; font-weight: 700; color: #8D6E63; cursor: pointer; }
 .settings-btn { background: #FFF !important; border: 2px solid #FFF8E1 !important; color: #8D6E63 !important; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.3s ease !important; }
 
-/* --- 상세 프로필 컴포넌트 --- */
+/* --- [OOCSS 적용] 상세 프로필 컴포넌트 --- */
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 
-.img-wrapper { position: relative; width: 120px; height: 120px; margin: 0 auto 20px; }
-.img-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+/* Object: Avatar 구조 */
+.c-avatar { position: relative; margin: 0 auto 20px; display: block; }
+.c-avatar__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Skin & Modifier: 프로필용 크기 및 모양 */
+.c-avatar--profile { width: 120px; height: 120px; }
+.c-avatar--circle, .c-avatar--circle .c-avatar__img { border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
 .c-camera-btn { 
     position: absolute; bottom: 5px; right: 5px; 
     width: 34px; height: 34px; border-radius: 50%; 

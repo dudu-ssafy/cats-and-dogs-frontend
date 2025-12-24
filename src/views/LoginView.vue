@@ -34,7 +34,7 @@ onMounted(async () => {
             localStorage.setItem('user-info', JSON.stringify(userStore.user));
             
             alert(`소셜 로그인 성공! 환영합니다, ${userStore.user.username}님! 🐾`);
-            router.push('/');
+            router.push('/my-Profile');
         } catch (error) {
             console.error('Social login failed:', error);
             alert('소셜 로그인 처리 중 오류가 발생했습니다.');
@@ -42,26 +42,29 @@ onMounted(async () => {
     }
 });
 
+// LoginView.vue 내부의 로그인 처리 예시
 const handleLogin = async () => {
-    if (!email.value || !password.value) {
-        alert('이메일과 비밀번호를 모두 입력해주세요.');
-        return;
-    }
+  try {
+   // [수정] 현재 ref로 선언된 email과 password를 객체로 전달해야 합니다.
+    const loginData = {
+        email: email.value,
+        password: password.value
+    };
 
-    try {
-        await userStore.login({ 
-            email: email.value,
-            password: password.value
-        });
-
-        alert(`로그인 성공! 환영합니다, ${userStore.user.username}님! 🐾`);
-        router.push('/');
-    } catch (error) {
-        console.error('Login error:', error);
-        alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
-        email.value = '';
-        password.value = '';
-    }
+    const response = await api.post('/users/login/', loginData);
+    // 1. Store에 유저 정보 저장
+    userStore.setUser(response.data.user); 
+    
+    // 2. 로그인 성공 알림 (선택 사항)
+    alert("반가워요! 로그인이 완료되었습니다. 🐾");
+    
+    // 3. 마이페이지로 이동 (이 부분이 핵심입니다)
+    router.push('/my-Profile'); // router.push() 안에 설정하신 마이페이지 경로를 입력하세요.
+    
+  } catch (error) {
+    console.error("로그인 실패:", error);
+    alert("아이디 또는 비밀번호를 확인해주세요.");
+  }
 };
 
 const loginSocial = (provider) => {
