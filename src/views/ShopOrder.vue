@@ -95,8 +95,8 @@ onMounted(() => {
             </h3>
             
             <div class="order-item" v-for="item in store.cartItems" :key="item.id">
-              <!-- 이미지: 백엔드 필드 없음, 임시 처리 -->
-              <img :src="'https://via.placeholder.com/70'" class="item-thumb">
+              <!-- 이미지: 백엔드 필드 main_image 연결 -->
+              <img :src="item.main_image || 'https://via.placeholder.com/70'" class="item-thumb" :alt="item.product_name">
               <div class="item-info">
                 <p class="item-name">{{ item.product_name }}</p>
                 <p class="item-opt">옵션: {{ item.option_value || '없음' }} / {{ item.quantity }}개</p>
